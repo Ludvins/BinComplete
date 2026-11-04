@@ -1,12 +1,36 @@
 # Resource and artifact boundaries
 
-```text
-inputs -> prepare_dataset -> Dataset -> fit(method) -> ModelArtifact
-ModelArtifact + Dataset -> propose -> ProposalArtifact
-ProposalArtifact -> export chosen IDs -> external tools
-external approved IDs + proposals -> reconcile -> SelectionArtifact
-SelectionArtifact -> export -> changed FASTAs + unchanged-input manifest
-```
+<ol class="diagram-flow" role="list" aria-label="Artifact lifecycle">
+  <li>
+    <strong>Prepare inputs</strong>
+    <code>inputs → prepare_dataset → Dataset</code>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Fit a model</strong>
+    <code>Dataset → fit(method) → ModelArtifact</code>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Propose alternatives</strong>
+    <code>ModelArtifact + Dataset → propose → ProposalArtifact</code>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Assess quality externally</strong>
+    <code>ProposalArtifact → export chosen IDs → external tools</code>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Reconcile approvals</strong>
+    <code>External approved IDs + proposals → reconcile → SelectionArtifact</code>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Export compatible bins</strong>
+    <code>SelectionArtifact → export → changed FASTAs + unchanged-input manifest</code>
+  </li>
+</ol>
 
 Resource defaults depend on the entry point:
 

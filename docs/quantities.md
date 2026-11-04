@@ -22,23 +22,32 @@ To measure depth, mapping software aligns reads back to the assembly, and a
 coverage tool summarizes the retained alignments. Ambiguous alignments, quality
 filters and trimmed contig ends depend on that upstream tool's policy.
 
-```mermaid
----
-config:
-  flowchart:
-    useMaxWidth: false
----
-flowchart LR
-    SAMPLE["DNA molecules in a sample"] --> SEQ["Sequencing: reads"]
-    SEQ --> ASM["Assembly: contigs"]
-    SEQ --> MAP["Map reads to contigs"]
-    ASM --> MAP
-    MAP --> DEPTH["Coverage mean and variance"]
-    ASM --> BINS["Original bins"]
-    ASM --> BC["BinComplete"]
-    BINS --> BC
-    DEPTH --> BC
-```
+<ol class="diagram-flow" role="list" aria-label="From a DNA sample to BinComplete inputs">
+  <li>
+    <strong>Sequence the sample</strong>
+    <p>DNA molecules in the sample → sequencing → reads.</p>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Assemble the reads</strong>
+    <p>Reads → assembly → contigs.</p>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Map reads and bin contigs</strong>
+    <div class="diagram-grid"><section class="diagram-card"><h3>Read mapping</h3><p>Reads + contigs → read alignments.</p></section><section class="diagram-card"><h3>Original binning</h3><p>Contigs → original bins.</p></section></div>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Summarize coverage</strong>
+    <p>Mapped read alignments → per-contig coverage means and variances.</p>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Provide BinComplete inputs</strong>
+    <p>Assembly contigs + original bins + the measured coverage table.</p>
+  </li>
+</ol>
 
 BinComplete starts from the contigs, original bin memberships and coverage
 table. It does not generate reads, choose how many molecules to sequence,

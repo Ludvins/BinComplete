@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Wrap the documentation overview into a reverse-C flow. Reflow all diagrams
+  for narrow containers without internal scrolling and remove the image footer.
 - Restore the README workflow illustration and link the hosted documentation.
 - Remove obsolete import aliases, environment-variable fallbacks and command
   forwarding. Use the supported BinComplete CLI and Python namespace.

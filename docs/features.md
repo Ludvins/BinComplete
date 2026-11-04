@@ -31,34 +31,45 @@ produce the same ranking. `logistic_full_pool` changes the classifier and applie
 training-only scaling. None of these features contains CheckM2, RNA annotations,
 HQ status or accepted-repair labels.
 
-```mermaid
----
-config:
-  flowchart:
-    useMaxWidth: false
----
-flowchart TD
-    DNA["Contig sequences"] --> K["Canonical 4-mer frequencies"]
-    DNA --> Z["Frozen DNABERT-S embeddings"]
-    COV["Measured coverage mean and variance"] --> CV["6 coverage features"]
-    LEN["Contig lengths"] --> W["Core summary weights"]
-    K --> CP["4 composition features"]
-    W --> CP
-    W --> CV
-    Z --> ES["6 embedding similarity features"]
-    W --> ES
-    CP --> TEN["10-column feature matrix"]
-    CV --> TEN
-    TEN --> KM["kmers: HGB"]
-    TEN --> SIXTEEN["16-column feature matrix"]
-    ES --> SIXTEEN
-    SIXTEEN --> HG["dnabert_s / hgb_full_pool: HGB"]
-    SIXTEEN --> LR["Weighted scaler + logistic_full_pool"]
-    Z --> NEURAL["single: attention query"]
-    COV -->|"core mean only"| NEURAL
-    Z --> COS["cosine: analytic centroid"]
-    W --> COS
-```
+<div class="feature-map" role="group" aria-label="Feature construction and model inputs">
+<div class="diagram-grid">
+  <section class="diagram-card">
+    <h3>Composition</h3>
+    <p>Contig sequences â†’ canonical 4-mer frequencies â†’ <strong>4 composition features</strong>.</p>
+  </section>
+  <section class="diagram-card">
+    <h3>Coverage</h3>
+    <p>Measured coverage means and variances â†’ <strong>6 coverage features</strong>.</p>
+  </section>
+  <section class="diagram-card">
+    <h3>Embedding similarity</h3>
+    <p>Frozen DNABERT-S embeddings â†’ <strong>6 embedding similarity features</strong>.</p>
+  </section>
+</div>
+<p class="diagram-note">Contig lengths provide the core-summary weights in all three feature blocks.</p>
+<div class="diagram-grid">
+  <section class="diagram-card">
+    <h3><code>kmers</code></h3>
+    <p>4 composition + 6 coverage columns â†’ <strong>10 columns</strong> â†’ HGB.</p>
+  </section>
+  <section class="diagram-card">
+    <h3><code>dnabert_s</code> / <code>hgb_full_pool</code></h3>
+    <p>10 columns + 6 embedding columns â†’ <strong>16 columns</strong> â†’ HGB.</p>
+  </section>
+  <section class="diagram-card">
+    <h3><code>logistic_full_pool</code></h3>
+    <p>The same <strong>16 columns</strong> â†’ weighted scaler â†’ logistic regression.</p>
+  </section>
+  <section class="diagram-card">
+    <h3><code>single</code></h3>
+    <p>Core embeddings + centered log depth from core mean coverage â†’ attention query.</p>
+  </section>
+  <section class="diagram-card">
+    <h3><code>cosine</code></h3>
+    <p>Embeddings + contig-length weights â†’ analytic core centroid.</p>
+  </section>
+</div>
+</div>
 
 ## Notation and raw representations
 
@@ -290,23 +301,27 @@ a mean Hellinger distance, not a standard deviation of the frequency coordinates
 The following overview spans all three feature blocks; the reductions used
 by each block are exactly those in its own table.
 
-```mermaid
----
-config:
-  flowchart:
-    useMaxWidth: false
----
-flowchart LR
-    CORE["Retained core members"] --> SUMMARY["Weighted centroids and dispersion"]
-    CORE --> PAIRS["Candidate-to-member comparisons"]
-    X["One candidate"] --> PAIRS
-    X --> DIST["Candidate-to-centroid comparisons"]
-    SUMMARY --> DIST
-    PAIRS --> STATS["Nearest / min / max / mean / SD"]
-    DIST --> ROW["One classifier feature row"]
-    STATS --> ROW
-    SUMMARY --> ROW
-```
+<ol class="diagram-flow" role="list" aria-label="Core-to-candidate feature construction">
+  <li>
+    <strong>Inputs</strong>
+    <p>Retained core members and one candidate.</p>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Summarize the core and compare its members</strong>
+    <div class="diagram-grid"><section class="diagram-card"><h3>Core summaries</h3><p>Compute weighted centroids and dispersion from the retained core.</p></section><section class="diagram-card"><h3>Member comparisons</h3><p>Compare the candidate with individual core members.</p></section></div>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Compare centroids and reduce member comparisons</strong>
+    <div class="diagram-grid"><section class="diagram-card"><h3>Centroid comparisons</h3><p>Compare the candidate with the weighted core centroids.</p></section><section class="diagram-card"><h3>Member statistics</h3><p>Reduce candidate-to-member comparisons using the nearest value, minimum, maximum, mean or standard deviation.</p></section></div>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Build one classifier feature row</strong>
+    <p>Combine centroid comparisons, member statistics and core-summary quantities. Each feature table specifies the exact reductions used.</p>
+  </li>
+</ol>
 
 ## Coverage: six features
 
@@ -496,22 +511,37 @@ q_C=\operatorname{normalize}\left(\operatorname{Linear}
 s_{\mathrm{single}}(x,C)=z_x^\top q_C.
 $$
 
-```mermaid
----
-config:
-  flowchart:
-    useMaxWidth: false
----
-flowchart LR
-    CORE["Core embeddings + centered log depth"] --> PROJ["Linear: d+1 to 128"]
-    PROJ --> ENC["2 transformer layers; 4 heads"]
-    QUERY["One learned query"] --> ATT["Cross-attention over core"]
-    ENC --> ATT
-    ATT --> OUT["Linear to d + L2 normalize"]
-    OUT --> DOT["Dot product"]
-    DONOR["Candidate embedding"] --> DOT
-    DOT --> SCORE["Membership-ranking score"]
-```
+<ol class="diagram-flow" role="list" aria-label="Attention model inputs and scoring">
+  <li>
+    <strong>Core inputs</strong>
+    <p>Core embeddings plus centered log depth.</p>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Input projection</strong>
+    <p>Linear layer: <code>d + 1</code> input dimensions to 128 dimensions.</p>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Encode the core</strong>
+    <p>2 transformer layers with 4 attention heads.</p>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Cross-attention over the core</strong>
+    <p>One learned query attends to the encoded core members.</p>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Produce the query vector</strong>
+    <p>Linear projection to <code>d</code> dimensions, then L2 normalization.</p>
+    <svg class="diagram-flow__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li>
+    <strong>Score one candidate</strong>
+    <p>Take the dot product of the query vector and the candidate embedding to obtain the membership-ranking score.</p>
+  </li>
+</ol>
 
 Candidate coverage affects eligibility, but is not concatenated to the candidate
 embedding at scoring. There are no positional encodings. Training uses the
@@ -605,8 +635,8 @@ Scoring: [feature classifier](https://github.com/Ludvins/BinComplete/blob/main/s
 [attention inputs](https://github.com/Ludvins/BinComplete/blob/main/src/bincomplete/scorers/sets.py) and
 [cosine centroid](https://github.com/Ludvins/BinComplete/blob/main/src/bincomplete/scorers/centroid.py).
 
-These diagrams use Mermaid and formulas use GitHub Markdown math. Plain-text
-viewers still expose their source. Saved models retain their original numerical
+Diagrams use responsive HTML and CSS; formulas use GitHub Markdown math. Their
+text and labels remain available in the Markdown source. Saved models retain their original numerical
 source identity: source renaming does not authorize bypassing compatibility
 checks. Use the original frozen package for exact replay of an older artifact;
 use a new output directory for newly fitted models. See [migration](migration.md).

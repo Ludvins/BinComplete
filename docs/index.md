@@ -28,20 +28,44 @@ bincomplete demo --output demo
 
 ## From original bins to reviewed refinements
 
-```mermaid
----
-config:
-  flowchart:
-    useMaxWidth: false
----
-flowchart LR
-    INPUT["Assembly, coverage and original bins"] --> PREP["Prepare inputs"]
-    PREP --> MODEL["Fit membership models"]
-    MODEL --> PROPOSE["Rank candidates and propose memberships"]
-    PROPOSE --> QUALITY["Assess quality externally"]
-    QUALITY --> SELECT["Reconcile approved alternatives"]
-    SELECT --> EXPORT["Export compatible bins"]
-```
+<div class="workflow-overview-wrap">
+<ol class="workflow-overview" role="list" aria-label="Refinement workflow, seven steps">
+  <li class="workflow-overview__step">
+    <span class="workflow-overview__number" aria-hidden="true">1</span>
+    <span>Assembly, coverage and original bins</span>
+    <svg class="workflow-overview__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li class="workflow-overview__step">
+    <span class="workflow-overview__number" aria-hidden="true">2</span>
+    <span>Prepare inputs</span>
+    <svg class="workflow-overview__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li class="workflow-overview__step">
+    <span class="workflow-overview__number" aria-hidden="true">3</span>
+    <span>Fit membership models</span>
+    <svg class="workflow-overview__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li class="workflow-overview__step">
+    <span class="workflow-overview__number" aria-hidden="true">4</span>
+    <span>Rank candidates and propose memberships</span>
+    <svg class="workflow-overview__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li class="workflow-overview__step workflow-overview__step--external">
+    <span class="workflow-overview__number" aria-hidden="true">5</span>
+    <span>Assess quality externally</span>
+    <svg class="workflow-overview__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li class="workflow-overview__step">
+    <span class="workflow-overview__number" aria-hidden="true">6</span>
+    <span>Reconcile approved alternatives</span>
+    <svg class="workflow-overview__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+  </li>
+  <li class="workflow-overview__step">
+    <span class="workflow-overview__number" aria-hidden="true">7</span>
+    <span>Export compatible bins</span>
+  </li>
+</ol>
+</div>
 
 Proposal scores describe agreement with the original membership signal. They are
 not HQ probabilities or estimates of completeness and contamination. Quality

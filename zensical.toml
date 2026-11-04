@@ -78,7 +78,7 @@ toggle = { icon = "material/weather-sunny", name = "Switch to light mode" }
 
 [project.markdown_extensions]
 "pymdownx.arithmatex" = { generic = true }
-"pymdownx.superfences" = { custom_fences = [{ name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" }] }
+"pymdownx.superfences" = {}
 toc = { permalink = true, toc_depth = 3 }
 
 [project.validation]

@@ -59,18 +59,20 @@ an extracted source archive.
 - Use relative Markdown links between guides, including section anchors.
 - Link to repository source files with their GitHub URLs. Runtime source files
   are not copied into the published documentation.
-- Write formulas with `$...$` or `$$...$$` and diagrams in `mermaid` code fences.
-  MathJax renders formulas; Zensical initializes Mermaid diagrams. Flowcharts
-  declare `useMaxWidth: false` in their Mermaid configuration so labels retain
-  their normal size. Wide diagrams and equations scroll horizontally on narrow
-  screens instead of shrinking their labels or widening the whole page.
+- Write formulas with `$...$` or `$$...$$`; MathJax renders them. Diagrams use
+  responsive HTML, CSS and decorative SVG connectors. Use `diagram-flow` for a
+  sequence and `diagram-grid` for parallel inputs. Keep labels at the normal
+  text size and check narrow widths without adding internal scrollbars.
+- The home-page workflow uses an HTML ordered list and responsive CSS. Keep its
+  source order equal to the process order. The layout follows a reverse C in wide
+  containers and stacks vertically in narrow ones without an internal scrollbar.
 - Check search, light and dark themes, narrow screens, formulas and diagrams in
   a browser after changing the theme or rendering configuration.
 
 The site uses system fonts and has no configured analytics. Formula rendering
-loads the pinned MathJax browser library from jsDelivr; Mermaid uses the browser
-runtime supplied by the theme. Browser access to those assets is required for
-rendering. The strict build checks local page and anchor targets, not availability
+loads the pinned MathJax browser library from jsDelivr. Browser access to that
+asset is required for formula rendering. Diagrams use the page HTML and CSS and
+need no external diagram runtime. The strict build checks local page and anchor targets, not availability
 of external websites or the correctness of scientific explanations.
 
 ## Publish with GitHub Pages
@@ -80,8 +82,8 @@ requests and pushes to `main`. It does not deploy until a maintainer explicitly
 enables publication:
 
 1. Review and push the documentation source when ready to publish.
-2. In repository **Settings → Pages**, select **GitHub Actions** as the source.
-3. In **Settings → Secrets and variables → Actions → Variables**, create the
+2. In repository **Settings â†’ Pages**, select **GitHub Actions** as the source.
+3. In **Settings â†’ Secrets and variables â†’ Actions â†’ Variables**, create the
    repository variable `DOCS_PUBLISH_ENABLED` with the value `true`.
 4. Run the **Documentation** workflow on `main`, or push an approved documentation
    change to `main`. Its build must pass before deployment.

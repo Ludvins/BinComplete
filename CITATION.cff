@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "Please cite the software version and retain the resolved configuration and run manifests."
+type: software
+title: BinComplete
+version: 0.6.9b2
+date-released: 2026-11-04
+authors:
+  - family-names: Ortega
+    given-names: Luis A.
+    email: laoa@cs.aau.dk
+license: MIT
+repository-code: "https://github.com/Ludvins/BinComplete"
+abstract: "Membership-guided contig recruitment for metagenomic bin refinement."

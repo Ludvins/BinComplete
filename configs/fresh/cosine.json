@@ -1,0 +1,61 @@
+{
+  "seed": 73019,
+  "masker": {
+    "params": {
+      "extra_masks": 20,
+      "fractions": [
+        0.05,
+        0.1,
+        0.15,
+        0.2
+      ],
+      "decoy_every": 5,
+      "deduplicate": false
+    }
+  },
+  "negative_sampler": {
+    "params": {
+      "hard": 64,
+      "random": 32
+    }
+  },
+  "retriever": {
+    "params": {
+      "top_k": 1000,
+      "metric": "hellinger",
+      "weights": "length",
+      "min_length": 2000,
+      "max_length_fraction": 1.0,
+      "coverage_fold": 4.0,
+      "chunk_size": 4096,
+      "summary": "centroid"
+    }
+  },
+  "scorer": {
+    "params": {
+      "weights": "length"
+    }
+  },
+  "search": {
+    "name": "expanded_ranked_alternatives",
+    "params": {
+      "max_checks": 128,
+      "singleton_depth": 50,
+      "boundary_width": 2,
+      "max_added_fraction": 1.0
+    }
+  },
+  "training": {
+    "max_training_rows": 8000000,
+    "candidate_policy": "retrieved",
+    "weighting": "source_balanced"
+  },
+  "preprocessing": {
+    "composition": {
+      "alphabet_order": "ATGC",
+      "pseudocount": 1e-05,
+      "renormalize_float32": true
+    },
+    "coverage_dtype": "float32"
+  }
+}

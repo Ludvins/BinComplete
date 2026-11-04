@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=84.1.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bincomplete"
+version = "0.6.9b2"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Luis A. Ortega", email = "laoa@cs.aau.dk"}]
+maintainers = [{name = "Luis A. Ortega", email = "laoa@cs.aau.dk"}]
+keywords = ["metagenomics", "binning", "contig recruitment", "genome refinement"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+description = "BinComplete: membership-guided contig recruitment for metagenomic bin completion"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26", "scipy>=1.11", "scikit-learn>=1.7", "joblib>=1.3", "threadpoolctl>=3.1"]
+
+[project.urls]
+Homepage = "https://github.com/Ludvins/BinComplete"
+Repository = "https://github.com/Ludvins/BinComplete"
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+dev = ["pytest>=8", "ruff>=0.9", "mypy>=1.15", "numpydoc>=1.8"]
+embeddings = ["torch>=2.13.0", "setuptools>=84.1.0", "transformers", "einops>=0.8.2"]
+sets = ["torch>=2.13.0", "setuptools>=84.1.0"]
+
+[project.scripts]
+bincomplete = "bincomplete.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401", "I001"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+follow_imports = "silent"
+check_untyped_defs = true
+files = ["src/bincomplete/sequence_io.py", "src/bincomplete/artifacts.py", "src/bincomplete/resources.py", "src/bincomplete/methods.py", "src/bincomplete/compat.py", "src/bincomplete/classifiers/logistic.py", "src/bincomplete/experiments", "src/bincomplete/standard.py", "src/bincomplete/environment.py", "src/bincomplete/cli.py", "src/bincomplete/defaults.py", "src/bincomplete/model_assets.py", "src/bincomplete/preflight.py", "src/bincomplete/demo.py", "src/bincomplete/inventory.py", "src/bincomplete/prioritization.py"]
+
+[tool.setuptools.package-data]
+bincomplete = ["profiles/standard_v1/*.json"]

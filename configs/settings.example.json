@@ -1,0 +1,21 @@
+{
+  "retriever": {
+    "params": {
+      "top_k": 1000,
+      "min_length": 2000,
+      "coverage_fold": 4.0
+    }
+  },
+  "search": {
+    "name": "expanded_ranked_alternatives",
+    "params": {
+      "max_proposals": 128,
+      "singleton_depth": 50,
+      "boundary_width": 2,
+      "max_added_fraction": 1.0
+    }
+  },
+  "training": {
+    "max_training_rows": 8000000
+  }
+}

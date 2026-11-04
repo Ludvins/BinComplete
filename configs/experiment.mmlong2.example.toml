@@ -1,0 +1,8 @@
+# Current compact experiment. Configure the encoder/device once with bincomplete config init.
+schema_version = 2
+output = "../runs/sampleA"
+
+[datasets.sample]
+input_format = "mmlong2"
+input_root = "/data/mmlong2/sampleA"
+# Optional explicit coverage and coverage_profile select one full JGI profile.

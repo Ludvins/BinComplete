@@ -1,0 +1,86 @@
+[project]
+site_name = "BinComplete"
+site_description = "Contig recruitment for metagenomic bin refinement: installation, workflows, model features and external evaluation."
+site_author = "Luis A. Ortega"
+site_url = "https://ludvins.github.io/BinComplete/"
+repo_url = "https://github.com/Ludvins/BinComplete"
+repo_name = "Ludvins/BinComplete"
+edit_uri = "edit/main/docs/"
+copyright = "Copyright &copy; Luis A. Ortega. Distributed under the MIT licence."
+docs_dir = "docs"
+site_dir = "site"
+exclude_docs = "README.md"
+extra_css = ["stylesheets/extra.css"]
+extra_javascript = [
+  "javascripts/mathjax.js",
+  "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js",
+]
+nav = [
+  { "Home" = "index.md" },
+  { "Getting started" = [
+    { "Installation and first run" = "from_scratch.md" },
+    { "Inputs from other binners" = "generic_workflow.md" },
+    { "Input formats and MMLong2" = "inputs.md" },
+  ] },
+  { "User guides" = [
+    { "Shared configuration" = "global_configuration.md" },
+    { "Configuration reference" = "configuration.md" },
+    { "Running experiments" = "experiments.md" },
+    { "Outputs, ranking and evaluation" = "evaluation.md" },
+    { "Portable recipe" = "portable_recipe.md" },
+    { "Migration" = "migration.md" },
+  ] },
+  { "Methods" = [
+    { "Understanding the quantities" = "quantities.md" },
+    { "Features and formulas" = "features.md" },
+    { "Training protocol" = "training_protocol.md" },
+    { "Validation and limitations" = "validation.md" },
+  ] },
+  { "Reference" = [
+    { "CLI and Python API" = "api.md" },
+    { "Glossary" = "glossary.md" },
+    { "Architecture" = "architecture.md" },
+    { "Trust and external assets" = "security.md" },
+  ] },
+  { "Contributing" = [
+    { "Documentation website" = "documentation.md" },
+    { "Release preparation" = "releasing.md" },
+  ] },
+]
+
+[project.theme]
+variant = "classic"
+language = "en"
+logo = "assets/logo.svg"
+favicon = "assets/logo.svg"
+font = false
+features = [
+  "navigation.tabs",
+  "navigation.sections",
+  "navigation.top",
+  "navigation.footer",
+  "content.code.copy",
+  "search.highlight",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "teal"
+accent = "teal"
+toggle = { icon = "material/weather-night", name = "Switch to dark mode" }
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "teal"
+accent = "teal"
+toggle = { icon = "material/weather-sunny", name = "Switch to light mode" }
+
+[project.markdown_extensions]
+"pymdownx.arithmatex" = { generic = true }
+"pymdownx.superfences" = { custom_fences = [{ name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" }] }
+toc = { permalink = true, toc_depth = 3 }
+
+[project.validation]
+invalid_links = true
+invalid_link_anchors = true

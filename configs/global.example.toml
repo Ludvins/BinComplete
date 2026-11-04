@@ -1,0 +1,101 @@
+# Copy this file or run bincomplete config init to create host-specific paths.
+# This file is shared across schema-2 dataset experiments.
+schema_version = 1
+preset = "standard_v1"
+device = "cpu"
+encoder_path = "/path/to/dnabert_s"
+cache = "~/.cache/bincomplete"
+enabled_methods = ["cosine", "kmers", "dnabert_s", "single", "hgb_full_pool", "logistic_full_pool"]
+
+[resources]
+threads = 2
+memory_gib = 6
+cache_gib = 10
+chunk_size = 4096
+
+[search]
+max_proposals = 128
+singleton_depth = 50
+boundary_width = 2
+max_added_fraction = 1.0
+
+[retriever]
+top_k = 1000
+min_length = 2000
+coverage_fold = 4.0
+max_length_fraction = 1.0
+
+[encoder]
+pooling = "non_special_bp_weighted_windows"
+window_bp = 6000
+windows = 4
+max_tokens = 2048
+reverse_complement = true
+storage_dtype = "float16"
+precision = "auto"
+batch_size = 8
+
+[methods]
+
+[methods.kmers]
+
+[methods.kmers.classifier]
+
+[methods.kmers.classifier.params]
+max_iter = 150
+max_leaf_nodes = 7
+learning_rate = 0.05
+min_samples_leaf = 30
+l2_regularization = 2.0
+early_stopping = false
+random_state = 73019
+
+[methods.dnabert_s]
+
+[methods.dnabert_s.classifier]
+
+[methods.dnabert_s.classifier.params]
+max_iter = 150
+max_leaf_nodes = 7
+learning_rate = 0.05
+min_samples_leaf = 30
+l2_regularization = 2.0
+early_stopping = false
+random_state = 73019
+
+[methods.hgb_full_pool]
+
+[methods.hgb_full_pool.classifier]
+
+[methods.hgb_full_pool.classifier.params]
+max_iter = 150
+max_leaf_nodes = 7
+learning_rate = 0.05
+min_samples_leaf = 30
+l2_regularization = 2.0
+early_stopping = false
+random_state = 73019
+
+[methods.logistic_full_pool]
+
+[methods.logistic_full_pool.classifier]
+
+[methods.logistic_full_pool.classifier.params]
+C = 1.0
+max_iter = 1000
+random_state = 73019
+tol = 1e-06
+
+[methods.single]
+
+[methods.single.scorer]
+
+[methods.single.scorer.params]
+width = 128
+layers = 2
+heads = 4
+feedforward = 256
+max_epochs = 40
+batch_size = 16
+learning_rate = 0.001
+patience = 6

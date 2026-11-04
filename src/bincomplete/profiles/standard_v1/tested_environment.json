@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "recipe": "standard_v1",
+  "python": "3.12",
+  "packages": {
+    "numpy": "2.4.3",
+    "scipy": "1.17.1",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3",
+    "threadpoolctl": "3.6.0",
+    "torch": "2.13.0+cpu",
+    "transformers": "5.11.0",
+    "tokenizers": "0.22.2",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "1.18.0",
+    "pytest": "9.0.3",
+    "ruff": "0.16.3",
+    "mypy": "2.3.1",
+    "setuptools": "84.2.1",
+    "pip": "26.2.2"
+  },
+  "scope": "Reference dependency versions for diagnostics. Actual runs record their own device, arithmetic and inputs; matching versions do not guarantee identical results."
+}

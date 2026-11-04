@@ -1,0 +1,6 @@
+include README.md LICENSE THIRD_PARTY.md CITATION.cff CHANGELOG.md CONTRIBUTING.md SUPPORT.md SECURITY.md requirements.txt
+include run.py zensical.toml requirements-docs.txt
+recursive-include docs *.md *.png *.svg *.css *.js
+recursive-include configs *.json *.toml *.md
+recursive-include tools *.py
+recursive-include tests *.py

@@ -1,0 +1,42 @@
+__pycache__/
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+runs/*
+!runs/.gitkeep
+*.partial
+.ruff_cache/
+.mypy_cache/
+.venv/
+/demo/
+/demo-run/
+/ci-source/
+/ci-smoke/
+/ci-demo/
+/ci-sdist-smoke/
+/ci-encoder-weights/
+/ci-encoder-weights.*
+/ci-encoder-run/
+
+# Local maintenance files and host configuration
+/AGENTS.md
+/release_verification.json
+.env
+.env.*
+.DS_Store
+Thumbs.db
+
+# External data, weights and durable run artifacts
+/data/
+/models/
+/weights/
+/cache/
+/checkpoints/
+/outputs/
+/artifacts/
+
+# Generated documentation and its isolated environment
+/site/
+/.cache/
+/.venv-docs/

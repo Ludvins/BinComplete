@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Repair corrupted documentation arrows and release-header dashes, and reject
+  common encoding artifacts during source readiness checks.
 - Wrap the documentation overview into a reverse-C flow. Reflow all diagrams
   for narrow containers without internal scrolling and remove the image footer.
 - Restore the README workflow illustration and link the hosted documentation.
@@ -38,7 +40,7 @@
 - Successful experiment runs automatically export the complete ordered candidate inventory and its receipt.
 - Fitted models, membership scores, search budgets and proposal generation are unchanged.
 
-## 0.6.8b3 â€” 2026-11-03
+## 0.6.8b3 — 2026-11-03
 
 - Document original-control export, complete supplied-vector row contracts and
   Python settings resolution. Explain encoder pooling, model parameters and
@@ -55,7 +57,7 @@
 - Older artifacts retain their original frozen package and immutable source
   identities. Use a new output directory for fits with this release.
 
-## 0.6.8b2 â€” 2026-11-02
+## 0.6.8b2 — 2026-11-02
 
 - Return actionable preflight errors for missing embeddings and incompatible
   training/evaluation encoder or composition contracts before fitting.
@@ -65,7 +67,7 @@
 - Remove unused component descriptors and no-op source-binding hooks, preserving
   numerical formulas, standard recipes and strict saved-artifact guards.
 
-## 0.6.8b1 â€” 2026-11-02
+## 0.6.8b1 — 2026-11-02
 
 - Add an algorithm catalogue, descriptive input aliases and an explicit proposal
   cap name while preserving the six stored profile IDs, settings and seeds.
@@ -79,7 +81,7 @@
 - Preserve numerical formulas and artifact compatibility guards. Older artifacts
   retain their original source snapshots and immutable manifests.
 
-## 0.6.7b2 â€” 2026-11-02
+## 0.6.7b2 — 2026-11-02
 
 - Remove campaign notes, old study recipes, outcome counts and local execution
   metadata from the source distribution; preserve originals externally.
@@ -90,7 +92,7 @@
 - Preserve all numerical implementations and standard method settings.
 - Include shared test fixtures in source archives so their test suite is usable.
 
-## 0.6.7b1 â€” 2026-11-02
+## 0.6.7b1 — 2026-11-02
 
 - Add a feature reference with all 16 engineered formulas, exact model/input
   mappings, column order, scaling, numerical conventions and three diagrams.
@@ -100,7 +102,7 @@
 - Preserve numerical formulas and standard method settings. Older artifacts use
   their original frozen package for exact replay; no manifests are relabelled.
 
-## 0.6.6b1 â€” 2026-11-02
+## 0.6.6b1 — 2026-11-02
 
 - Preserve numeric and reserved-looking FASTA bin names, including `0.fa` and
   `NA.fa`; reject empty bin FASTAs. Membership TSV unassigned labels retain their
@@ -118,7 +120,7 @@
 - Preserve standard numerical settings, feature/scorer code and the 128-proposal
   search.
 
-## 0.6.5 â€” 2026-11-02
+## 0.6.5 — 2026-11-02
 
 - Improve generic and mmlong2 input discovery, compressed-bin diagnostics,
   composition-only preflight and CLI error messages.

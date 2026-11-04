@@ -82,6 +82,37 @@ def test_source_check_needs_no_checkout_signoff(release_tree):
     assert RELEASE["check"](release_tree, public=True)["status"] == "FAILED"
 
 
+@pytest.mark.parametrize(
+    "damaged",
+    [
+        "\u00e2\u2020\u2019",
+        "\u00e2\u20ac\u201d",
+        "\u00e2\u20ac\u2122",
+        "\u00e2\u0086\u0092",
+        "\ufffd",
+    ],
+)
+def test_source_check_rejects_corrupted_documentation(release_tree, damaged):
+    (release_tree / "docs/encoding.md").write_text("# Example\n" + damaged, encoding="utf-8")
+    result = RELEASE["check"](release_tree)
+    assert result["status"] == "FAILED"
+    assert any("corrupted text encoding" in error for error in result["errors"])
+
+
+def test_source_check_accepts_valid_unicode_documentation(release_tree):
+    (release_tree / "docs/encoding.md").write_text(
+        "# Example\nCaf\u00e9 \u2192 contig \u2014 na\u00efve.\n", encoding="utf-8"
+    )
+    assert RELEASE["check"](release_tree)["status"] == "SOURCE_READY"
+
+
+def test_source_check_rejects_non_utf8_documentation(release_tree):
+    (release_tree / "docs/encoding.md").write_bytes(b"# Example\n\xff")
+    result = RELEASE["check"](release_tree)
+    assert result["status"] == "FAILED"
+    assert any("not valid UTF-8" in error for error in result["errors"])
+
+
 def test_generated_documentation_does_not_change_source_signoff(release_tree):
     for folder in ("site", ".cache", ".venv", ".venv-docs"):
         generated = release_tree / folder / "generated.html"

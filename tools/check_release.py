@@ -16,6 +16,12 @@ import tomllib
 from pathlib import Path
 from urllib.parse import unquote
 
+ENCODING_ARTIFACTS = re.compile(
+    r"[\u0080-\u009f\ufffd]"
+    r"|\u00e2(?:\u2020[\u2018\u2019]|\u20ac[\u2018\u2019\u201c\u201d\u0153\u2122\u02dc\u00a6])"
+    r"|\u00c2[\u00a0-\u00bf]"
+)
+
 REQUIRED_RELEASE_CHECKS = (
     "clean_windows",
     "clean_linux",
@@ -99,7 +105,14 @@ def check(root: Path, public: bool = False) -> dict:
     guides = list(root.glob("*.md")) + list((root / "docs").rglob("*.md"))
     guides += list((root / "configs").rglob("*.md"))
     for guide in guides:
-        for target in re.findall(r"!?\[[^\]]*\]\(([^)]+)\)", guide.read_text(encoding="utf-8")):
+        try:
+            text = guide.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            errors.append(f"Guide is not valid UTF-8: {guide.relative_to(root)}")
+            continue
+        if ENCODING_ARTIFACTS.search(text):
+            errors.append(f"Possible corrupted text encoding in {guide.relative_to(root)}")
+        for target in re.findall(r"!?\[[^\]]*\]\(([^)]+)\)", text):
             target = target.split("#", 1)[0].strip("<>")
             if not target or "://" in target or target.startswith("mailto:"):
                 continue

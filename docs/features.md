@@ -35,38 +35,38 @@ HQ status or accepted-repair labels.
 <div class="diagram-grid">
   <section class="diagram-card">
     <h3>Composition</h3>
-    <p>Contig sequences â†’ canonical 4-mer frequencies â†’ <strong>4 composition features</strong>.</p>
+    <p>Contig sequences → canonical 4-mer frequencies → <strong>4 composition features</strong>.</p>
   </section>
   <section class="diagram-card">
     <h3>Coverage</h3>
-    <p>Measured coverage means and variances â†’ <strong>6 coverage features</strong>.</p>
+    <p>Measured coverage means and variances → <strong>6 coverage features</strong>.</p>
   </section>
   <section class="diagram-card">
     <h3>Embedding similarity</h3>
-    <p>Frozen DNABERT-S embeddings â†’ <strong>6 embedding similarity features</strong>.</p>
+    <p>Frozen DNABERT-S embeddings → <strong>6 embedding similarity features</strong>.</p>
   </section>
 </div>
 <p class="diagram-note">Contig lengths provide the core-summary weights in all three feature blocks.</p>
 <div class="diagram-grid">
   <section class="diagram-card">
     <h3><code>kmers</code></h3>
-    <p>4 composition + 6 coverage columns â†’ <strong>10 columns</strong> â†’ HGB.</p>
+    <p>4 composition + 6 coverage columns → <strong>10 columns</strong> → HGB.</p>
   </section>
   <section class="diagram-card">
     <h3><code>dnabert_s</code> / <code>hgb_full_pool</code></h3>
-    <p>10 columns + 6 embedding columns â†’ <strong>16 columns</strong> â†’ HGB.</p>
+    <p>10 columns + 6 embedding columns → <strong>16 columns</strong> → HGB.</p>
   </section>
   <section class="diagram-card">
     <h3><code>logistic_full_pool</code></h3>
-    <p>The same <strong>16 columns</strong> â†’ weighted scaler â†’ logistic regression.</p>
+    <p>The same <strong>16 columns</strong> → weighted scaler → logistic regression.</p>
   </section>
   <section class="diagram-card">
     <h3><code>single</code></h3>
-    <p>Core embeddings + centered log depth from core mean coverage â†’ attention query.</p>
+    <p>Core embeddings + centered log depth from core mean coverage → attention query.</p>
   </section>
   <section class="diagram-card">
     <h3><code>cosine</code></h3>
-    <p>Embeddings + contig-length weights â†’ analytic core centroid.</p>
+    <p>Embeddings + contig-length weights → analytic core centroid.</p>
   </section>
 </div>
 </div>

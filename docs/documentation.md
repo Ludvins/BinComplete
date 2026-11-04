@@ -55,6 +55,9 @@ an extracted source archive.
 
 ## Editing guides
 
+- Save guides as UTF-8. Maintenance scripts must read and write text with an
+  explicit `encoding="utf-8"` rather than relying on the operating-system default.
+  The documentation workflow checks source text before building or publishing.
 - Add each new guide to `nav` in `zensical.toml` and to the guide index.
 - Use relative Markdown links between guides, including section anchors.
 - Link to repository source files with their GitHub URLs. Runtime source files
@@ -82,8 +85,8 @@ requests and pushes to `main`. It does not deploy until a maintainer explicitly
 enables publication:
 
 1. Review and push the documentation source when ready to publish.
-2. In repository **Settings â†’ Pages**, select **GitHub Actions** as the source.
-3. In **Settings â†’ Secrets and variables â†’ Actions â†’ Variables**, create the
+2. In repository **Settings → Pages**, select **GitHub Actions** as the source.
+3. In **Settings → Secrets and variables → Actions → Variables**, create the
    repository variable `DOCS_PUBLISH_ENABLED` with the value `true`.
 4. Run the **Documentation** workflow on `main`, or push an approved documentation
    change to `main`. Its build must pass before deployment.

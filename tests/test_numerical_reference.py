@@ -7,20 +7,12 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from bincomplete.compat import forward_legacy
 from bincomplete.features.membership import Composition, Coverage, EmbeddingSimilarity
 from bincomplete.search.ranked_alternatives import RankedAlternatives
 
 
-def test_native_legacy_commands_cannot_be_forwarded(monkeypatch):
-    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: pytest.fail("unexpected process"))
-    for command in ("score", "recover", "study", "--native"):
-        with pytest.raises(ValueError, match="external"):
-            forward_legacy(["--config", "example.json", command])
-
-
 def test_numerical_formulas_and_proposal_order_match_preserved_code(tmp_path):
-    configured = os.environ.get("BINCOMPLETE_GOLDEN_ROOT") or os.environ.get("BIN_RECRUITMENT_GOLDEN_ROOT")
+    configured = os.environ.get("BINCOMPLETE_GOLDEN_ROOT")
     if configured is None:
         configured = str(Path(__file__).resolve().parents[1] / "provenance/golden")
     root = Path(configured)
@@ -29,7 +21,7 @@ def test_numerical_formulas_and_proposal_order_match_preserved_code(tmp_path):
         "BINCOMPLETE_GOLDEN_SEARCH_MODULE", "bincomplete.search.ranked_alternatives"
     )
     if not (root / "src" / Path(*feature_module.split("."))).with_suffix(".py").is_file():
-        pytest.skip("Provide a preserved legacy source tree for cross-version golden checks")
+        pytest.skip("Provide a preserved reference source tree for cross-version numerical checks")
     rng = np.random.default_rng(73)
     k = rng.random((24, 136)).astype("float32")
     k /= k.sum(1, keepdims=True)

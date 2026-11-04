@@ -2,13 +2,7 @@
 
 **A Python package for metagenomic bin refinement through contig recruitment.**
 
-Research beta. Run `bincomplete --version` to identify your installation.
-Author and maintainer: **Luis A. Ortega**.
-Contact: [laoa@cs.aau.dk](mailto:laoa@cs.aau.dk).
-Licensed under [MIT](LICENSE); external models retain their
-[upstream licences](THIRD_PARTY.md). Start with the [current guide index](docs/README.md)
-and read the [validation limits](docs/validation.md) before interpreting gains.
-The documentation website can be [built and previewed locally](docs/documentation.md).
+Research beta. See the [documentation](https://ludvins.github.io/BinComplete/) to get started.
 
 BinComplete operates after an existing metagenomic binner. It learns contig
 membership from the bins that the binner produces, then uses those models to
@@ -19,19 +13,7 @@ Training uses original bin memberships as supervision. CheckM2 scores and other
 quality estimates are not used to select training sources, create labels, or
 rank proposals.
 
-```mermaid
-flowchart LR
-    ASSEMBLY["Assembly and measured coverage"] --> INPUT["Prepare inputs"]
-    BINNER["Existing binner"] --> BINS["Original bins"]
-    BINS --> INPUT
-    INPUT --> FIT["Fit membership models"]
-    INPUT --> RANK["Rank unassigned candidates"]
-    FIT --> RANK
-    RANK --> PROPOSE["Propose complete memberships"]
-    PROPOSE --> ASSESS["Assess quality externally"]
-    ASSESS --> SELECT["Reconcile approved constructions"]
-    SELECT --> EXPORT["Export compatible bins"]
-```
+![BinComplete workflow: original bins train membership models; trained models, incomplete bins and candidate contigs produce proposed additions. Quality assessment is external.](docs/assets/workflow.png)
 
 The binner supplies the starting bins; BinComplete supplies candidate rankings
 and proposed additions. Quality assessment remains a separate step using external
@@ -429,9 +411,7 @@ for one explicit method; `run_experiment` coordinates the methods in a recipe.
   completed outputs are verified before reuse.
 
 See [resource and artifact boundaries](docs/architecture.md) and
-[migration and preservation](docs/migration.md). The historical `bin_recruitment`
-namespace is retained as a small serialization compatibility layer for saved
-model classes; new code should import `bincomplete`.
+[artifact preservation](docs/migration.md#saved-artifacts).
 
 ## Development
 
@@ -454,3 +434,14 @@ See [contributing](CONTRIBUTING.md), [support](SUPPORT.md), [change history](CHA
 and [model/encoder trust boundaries](docs/security.md). Citation metadata is in
 [CITATION.cff](CITATION.cff). Source repository:
 [Ludvins/BinComplete](https://github.com/Ludvins/BinComplete).
+
+## Project information
+
+- Author and maintainer: **Luis A. Ortega**.
+- Contact: [laoa@cs.aau.dk](mailto:laoa@cs.aau.dk).
+- License: [MIT](LICENSE); external models retain their [upstream licences](THIRD_PARTY.md).
+
+Run `bincomplete --version` to identify your installation. Read the
+[validation limits](docs/validation.md) before interpreting gains. The
+[documentation website guide](docs/documentation.md) explains how to build and
+preview the site locally.

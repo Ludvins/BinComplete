@@ -7,7 +7,7 @@ and run evidence. It does not publish anything automatically.
 
 | Path | Purpose |
 | --- | --- |
-| `src/` | Maintained package and small saved-model compatibility modules |
+| `src/` | Maintained BinComplete package |
 | `docs/` | Website source, user guides, formulas, source-based diagrams and page assets |
 | `configs/` | Portable examples with placeholder paths |
 | `tests/` | Small synthetic tests; no private datasets or fitted models |
@@ -25,8 +25,8 @@ are not needed in a release.
 
 Retain licence and attribution notices for dependencies and external models.
 Review binary assets and their metadata as well as source text; graphics should
-be appropriate for public distribution. The workflow and model diagrams are
-maintained as Mermaid source alongside the prose.
+be appropriate for public distribution. The README uses the workflow illustration;
+detailed workflow and model diagrams use Mermaid source alongside the prose.
 
 ## Local validation
 

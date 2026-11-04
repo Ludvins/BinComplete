@@ -1,5 +1,7 @@
 # Build and maintain the documentation website
 
+Read the [hosted documentation](https://ludvins.github.io/BinComplete/).
+
 The website is generated from the Markdown guides in `docs/` with
 [Zensical](https://zensical.org/docs/). Edit those guides directly; do not maintain
 a second copy of their content in generated HTML. `zensical.toml` defines the
@@ -84,11 +86,10 @@ enables publication:
 4. Run the **Documentation** workflow on `main`, or push an approved documentation
    change to `main`. Its build must pass before deployment.
 
-The configured address is
+After a successful deployment, the site is available at
 [https://ludvins.github.io/BinComplete/](https://ludvins.github.io/BinComplete/).
-That address is a deployment target, not evidence that the site has been
-published. Confirm the actual workflow and deployment result before announcing
-it. Pull requests validate documentation without publishing it. Setting
+Check the workflow's deployment result after publishing changes.
+Pull requests validate documentation without publishing it. Setting
 `DOCS_PUBLISH_ENABLED` to `false` stops future deployments; it does not remove
 an already published site.
 

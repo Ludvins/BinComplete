@@ -52,14 +52,6 @@ def _main(argv: list[str] | None = None) -> int:
         Zero on success; invalid inputs are reported by the argument parser.
     """
     arguments = list(sys.argv[1:] if argv is None else argv)
-    if (
-        arguments
-        and arguments[0] not in {"experiment", "preflight"}
-        and any(value == "--config" or value.startswith("--config=") for value in arguments)
-    ):
-        from .compat import forward_legacy
-
-        return forward_legacy(arguments)
     from . import __version__
 
     parser = argparse.ArgumentParser(

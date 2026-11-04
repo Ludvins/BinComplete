@@ -60,11 +60,9 @@ use a new output directory for changed conditions. Use the original frozen packa
 for exact replay of an older artifact. Strict numerical and encoder compatibility
 guards remain active; never edit a manifest to make incompatible sources match.
 
-Small `bin_recruitment` serialization shims resolve trusted saved model classes.
-They contain no scientific runner. Old `--config` commands require a separately
-preserved installation selected explicitly by `BINCOMPLETE_LEGACY_ROOT`; native
-evaluation/study commands are not forwarded. Use only trusted saved models;
-see [trust boundaries](security.md).
+Use the documented CLI and Python API for the installed package. Earlier command
+interfaces and serialized class definitions require their original installation.
+Load only trusted saved models; see [trust boundaries](security.md).
 
 Current configuration examples are under `configs/`. Keep project-specific recipes,
 completed outputs, historical source snapshots and evaluation evidence outside

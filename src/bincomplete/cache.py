@@ -17,7 +17,7 @@ from .resources import FileLock, ResourceLimits
 
 def default_cache() -> Path:
     """Return an environment-configurable cache outside the source tree."""
-    base = os.environ.get("BINCOMPLETE_CACHE") or os.environ.get("BIN_RECRUITMENT_CACHE")
+    base = os.environ.get("BINCOMPLETE_CACHE")
     if base:
         return Path(base)
     return Path(os.environ.get("LOCALAPPDATA", Path.home() / ".cache")) / "bincomplete"

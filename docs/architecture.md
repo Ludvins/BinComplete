@@ -30,8 +30,8 @@ Only rebuildable arrays live in `arrays/<content identity>` in the derived cache
 Entry leases prevent active eviction; a quota lock serializes admission. Concurrent
 requests for a leased entry fail rather than duplicating work. Configure `--cache`
 or `BINCOMPLETE_CACHE`; default is the platform user cache under `bincomplete`.
-The former `BIN_RECRUITMENT_CACHE` variable is accepted as a fallback. Keep it separate
-from inputs and artifacts. Models and scientific evidence are never evicted.
+Keep the cache separate from inputs and artifacts. Models and scientific evidence
+are never evicted.
 Eviction requires a completed entry with a matching content identity and only
 its expected array and receipt files. Incomplete entries and unrelated files
 are preserved; if they prevent admission, the cache reports a budget error.

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Restore the README workflow illustration and link the hosted documentation.
+- Remove obsolete import aliases, environment-variable fallbacks and command
+  forwarding. Use the supported BinComplete CLI and Python namespace.
+- Shorten the README introduction and move project details to a dedicated section.
+- Preserve numerical implementations and all six standard method settings.
+
 ## 0.6.9b2
 
 - Update the tested CPU runtime to PyTorch 2.13.0 and setuptools 84.2.1, with

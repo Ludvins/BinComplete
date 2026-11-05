@@ -23,6 +23,51 @@ Before a real six-method run, have:
 
 Input paths below are placeholders to replace with your files. Quote paths that
 contain spaces. Commands keep the same working directory unless stated otherwise.
+
+## Use Docker on CPU
+
+Build the image from the BinComplete checkout. The build downloads the pinned
+dependencies and official DNABERT-S checkpoint. GitHub Actions checks the Linux
+x86-64 image by encoding ten artificial contigs and running all six methods in
+a container with networking disabled.
+
+```shell
+docker build --tag bincomplete:cpu .
+docker run --rm --network none bincomplete:cpu doctor --device cpu
+```
+
+Run the following from an external project directory containing `assembly.fasta`,
+`bins/` and `depth.tsv`. Mounting it at `/work` keeps the inputs, generated
+configuration and results available on the host. On Linux, use your UID and GID
+to give the container your existing project directory permissions.
+
+```bash
+bincomplete_cpu() {
+  docker run --rm --network none --user "$(id -u):$(id -g)" \
+    --mount "type=bind,source=$PWD,target=/work" \
+    --env BINCOMPLETE_CACHE=/work/.cache/bincomplete bincomplete:cpu "$@"
+}
+
+bincomplete_cpu init --assembly /work/assembly.fasta --bins /work/bins --coverage /work/depth.tsv --output /work/run
+bincomplete_cpu preflight --config /work/run/experiment.json
+bincomplete_cpu experiment --config /work/run/experiment.json
+```
+
+On Docker Desktop with PowerShell, use this function with the same arguments
+as above.
+
+```powershell
+function bincomplete_cpu {
+    docker run --rm --network none --mount "type=bind,source=${PWD},target=/work" --env BINCOMPLETE_CACHE=/work/.cache/bincomplete bincomplete:cpu @args
+}
+```
+
+Use `--memberships /work/memberships.tsv` in place of `--bins /work/bins` for a
+membership table. CheckM2 and RNA assessment use the separate
+[external evaluation workflow](evaluation.md).
+
+## Install with pip
+
 Create the environment from the source root:
 
 ```shell

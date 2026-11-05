@@ -1,0 +1,52 @@
+name: CPU container
+
+on:
+  push:
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/container.yml'
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'requirements.txt'
+      - 'README.md'
+      - 'LICENSE'
+      - 'THIRD_PARTY.md'
+      - 'tools/smoke_encoder.py'
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/container.yml'
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'requirements.txt'
+      - 'README.md'
+      - 'LICENSE'
+      - 'THIRD_PARTY.md'
+      - 'tools/smoke_encoder.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-encoder:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Build CPU image with the pinned DNABERT-S checkpoint
+        run: docker build --tag bincomplete:cpu .
+      - name: Run the installed CLI and encode synthetic FASTA offline
+        run: |
+          docker run --rm --pull never --network none bincomplete:cpu --version
+          docker run --rm --pull never --network none \
+            --mount "type=bind,source=$PWD/tools/smoke_encoder.py,target=/tmp/smoke_encoder.py,readonly" \
+            --entrypoint sh bincomplete:cpu -ec '
+              python -c "import torch; assert torch.version.cuda is None"
+              encoder_path=$(python -c "from bincomplete.defaults import builtin_defaults; print(builtin_defaults()[\"encoder_path\"])")
+              python /tmp/smoke_encoder.py --encoder-path "$encoder_path" --output /tmp/encoder-smoke
+            '

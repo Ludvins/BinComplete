@@ -10,6 +10,10 @@ checkpoint; weights are not bundled in the Python wheel. Retain the upstream
 licence and citation with redistributed model assets. See the
 [official model card](https://huggingface.co/zhihan1996/DNABERT-S).
 
+The CPU Docker image includes that checkpoint and its upstream code. The
+Apache 2.0 licence is included at `/usr/share/doc/bincomplete/DNABERT-S-LICENSE`.
+For research using the encoder, cite [Zhou et al. (2025)](https://doi.org/10.1093/bioinformatics/btaf188).
+
 Core dependencies include NumPy, SciPy, scikit-learn, joblib and threadpoolctl.
 Optional method dependencies include PyTorch, Transformers and einops. Consult
 their installed distributions for licence notices. A release environment can be

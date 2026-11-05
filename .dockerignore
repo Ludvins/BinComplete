@@ -1,0 +1,14 @@
+**
+!.dockerignore
+!Dockerfile
+!LICENSE
+!README.md
+!THIRD_PARTY.md
+!pyproject.toml
+!requirements.txt
+!src/
+src/*
+!src/bincomplete/
+!src/bincomplete/**
+**/__pycache__
+**/*.py[cod]

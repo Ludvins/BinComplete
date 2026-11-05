@@ -41,6 +41,9 @@ that overlap is recorded as transductive use in the output manifests.
 
 ## Installation
 
+The CPU Docker image includes the six-method runtime and the pinned DNABERT-S
+checkpoint. See the [Docker setup and examples](docs/from_scratch.md#use-docker-on-cpu).
+
 Requires Python 3.11 or later. From a source checkout:
 
 ```shell

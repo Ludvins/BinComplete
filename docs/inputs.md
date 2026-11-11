@@ -113,6 +113,28 @@ application into an independent test.
 
 ## Precomputed DNABERT-S vectors
 
+Use `encode` to produce a reusable bundle directly from the full, uncompressed
+assembly. The command uses your configured local DNABERT-S weights and encoder
+options. Set `--encoder-path` to use a different local checkpoint. Only the
+assembly and encoder are needed for this step.
+
+```shell
+bincomplete encode --assembly assembly.fasta --device cpu --output embeddings
+bincomplete init --assembly assembly.fasta --bins bins --coverage depth.tsv --embeddings embeddings/embeddings.npy --embedding-ids embeddings/embedding_ids.txt --embedding-space embeddings/embedding_space.json --output runs/sample
+bincomplete experiment --config runs/sample/experiment.json
+```
+
+Pass `--device cpu` to `init` as well when running the downstream methods on CPU.
+Keep the three embedding files and `complete.json` together. Preflight and
+preparation verify the original assembly bytes and all three file hashes
+when they find a BinComplete bundle receipt, even if the files were renamed for
+reuse. The receipt also records the actual encoding settings and numerical runtime.
+Independently supplied vectors without a BinComplete receipt follow the input
+contract below.
+The output directory is independent of the rebuildable cache. Repeating the same
+request at that directory verifies and reuses the completed bundle. Choose a new
+directory for a different assembly or encoding configuration.
+
 Precomputed DNABERT-S inputs require a finite, already L2-normalized float16/float32 NPY
 matrix, a row-ID text file, and encoder-space JSON. Supply all three together as
 `--embeddings vectors.npy --embedding-ids row_ids.txt --embedding-space space.json`.

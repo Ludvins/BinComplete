@@ -26,15 +26,17 @@ def main(argv: list[str] | None = None) -> int:
     """Report expected user-input errors concisely; --debug preserves tracebacks."""
     arguments = list(sys.argv[1:] if argv is None else argv)
     debug = "--debug" in arguments
+    arguments = [value for value in arguments if value != "--debug"]
     try:
-        return _main([value for value in arguments if value != "--debug"])
+        return _main(arguments)
     except (ValueError, OSError, ImportError, MemoryError) as error:
         if debug:
             raise
         print(f"bincomplete: error: {error}", file=sys.stderr)
-        print(
-            "Use --debug for a traceback; preflight --config FILE checks experiment inputs.", file=sys.stderr
-        )
+        hint = "Use --debug for a traceback."
+        if arguments[:1] not in (["encode"], ["cache"]):
+            hint += " Use preflight --config FILE to check experiment inputs."
+        print(hint, file=sys.stderr)
         return 2
 
 
@@ -123,6 +125,30 @@ def _main(argv: list[str] | None = None) -> int:
     inspect.add_argument("--path", type=Path, required=True)
     inspect.add_argument("--encoder-options", type=Path)
     inspect.add_argument("--output", type=Path)
+    encoder = commands.add_parser("encode", help="Precompute and save portable DNABERT-S embeddings")
+    encoder.add_argument("--assembly", type=Path, required=True)
+    encoder.add_argument("--output", type=Path, required=True, help="Directory for the embedding bundle")
+    encoder.add_argument("--encoder-path", type=Path, help="Local DNABERT-S weights and tokenizer")
+    encoder.add_argument(
+        "--encoder-options", type=Path, help="JSON overrides for the configured encoder options"
+    )
+    encoder.add_argument("--global-config", type=Path)
+    encoder.add_argument("--device", help="CPU or CUDA device; defaults to the configured device")
+    encoder.add_argument("--cache", type=Path)
+    encoder.add_argument("--threads", type=int)
+    encoder.add_argument("--memory-gib", type=float)
+    encoder.add_argument("--cache-gib", type=float)
+    cache_parser = commands.add_parser("cache", help="Manage rebuildable BinComplete arrays")
+    cache_commands = cache_parser.add_subparsers(dest="cache_command", required=True)
+    cleaner = cache_commands.add_parser("clean", help="Preview or remove unused rebuildable cache entries")
+    cleaner.add_argument("--cache", type=Path, help="Cache directory; defaults to the configured cache")
+    cleaner.add_argument("--global-config", type=Path)
+    cleaner.add_argument("--apply", action="store_true", help="Remove the selected entries")
+    cleaner.add_argument(
+        "--include-incomplete",
+        action="store_true",
+        help="Also discard inactive, recognized resumable entries",
+    )
     doctor = commands.add_parser("doctor", help="Record dependencies and actual numerical device")
     doctor.add_argument("--device", default="cpu")
     doctor.add_argument("--output", type=Path)
@@ -209,6 +235,47 @@ def _main(argv: list[str] | None = None) -> int:
         if command in (training, proposal, sequence):
             command.add_argument("--cache", type=Path)
     args = parser.parse_args(arguments)
+    if args.command == "encode":
+        from .defaults import load_defaults
+        from .encoding import encode
+
+        defaults, _ = load_defaults(args.global_config)
+        options = dict(defaults["encoder"], device=defaults["device"])
+        if args.encoder_options is not None:
+            overrides = read(args.encoder_options)
+            if not isinstance(overrides, dict):
+                raise ValueError("Encoder options must be a JSON object")
+            options.update(overrides)
+        if args.device is not None:
+            options["device"] = args.device
+        if options["precision"] == "auto":
+            options["precision"] = "float32" if options["device"] == "cpu" else "bfloat16"
+        resources = dict(defaults["resources"])
+        for name in ("threads", "memory_gib", "cache_gib"):
+            if getattr(args, name) is not None:
+                resources[name] = getattr(args, name)
+        print(
+            encode(
+                args.assembly,
+                args.output,
+                encoder_path=args.encoder_path or Path(defaults["encoder_path"]),
+                encoder_options=options,
+                cache_root=args.cache or Path(defaults["cache"]),
+                limits=ResourceLimits(**resources),
+            )
+        )
+        return 0
+    if args.command == "cache":
+        from .cache import DerivedCache
+        from .defaults import load_defaults
+
+        root = args.cache
+        if root is None:
+            defaults, _ = load_defaults(args.global_config)
+            root = Path(defaults["cache"])
+        cache = DerivedCache(root.expanduser().resolve(), ResourceLimits())
+        print(json.dumps(cache.clean(apply=args.apply, include_incomplete=args.include_incomplete), indent=2))
+        return 0
     if args.command == "methods":
         catalogue_rows = method_catalog()
         if args.json:

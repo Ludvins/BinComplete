@@ -66,6 +66,13 @@ methods accept precomputed vectors or a path to local pretrained DNABERT-S
 weights. Run commands never download the encoder automatically or train it.
 Use `bincomplete models install dnabert_s` explicitly if local weights are absent.
 
+Use `bincomplete encode` to save DNABERT-S embeddings for later runs. Keep
+`complete.json` beside the embedding files so BinComplete can verify them
+against the assembly. See the [embedding reuse guide](docs/inputs.md#precomputed-dnabert-s-vectors).
+
+`bincomplete cache clean` previews unused cache entries. Add `--apply` to remove
+them. See [cache and artifact handling](docs/architecture.md).
+
 The demo creates artificial DNA and supplied synthetic vectors, runs all six
 methods with reduced toy fits, and writes `candidates.tsv`. It needs no checkpoint,
 network access or quality tools and makes no HQ-gain claim. Repeating the same

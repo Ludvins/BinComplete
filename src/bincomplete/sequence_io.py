@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO, Iterator
@@ -37,7 +38,9 @@ class SequenceRecord:
     line_bytes: int
 
 
-def scan_records(path: str | Path, limits: ResourceLimits) -> Iterator[SequenceRecord]:
+def scan_records(
+    path: str | Path, limits: ResourceLimits, *, update_digest: Callable[[bytes], None] | None = None
+) -> Iterator[SequenceRecord]:
     """Stream validated records, accepting irregular FASTA through a safe fallback.
 
     Parameters
@@ -46,6 +49,8 @@ def scan_records(path: str | Path, limits: ResourceLimits) -> Iterator[SequenceR
         Original plain FASTA. Gzip cannot provide these random-access offsets.
     limits : ResourceLimits
         Maximum allocation for one sequence buffer.
+    update_digest : callable, optional
+        Receives the original bytes in file order as they are parsed.
 
     Yields
     ------
@@ -67,6 +72,8 @@ def scan_records(path: str | Path, limits: ResourceLimits) -> Iterator[SequenceR
         while True:
             offset = stream.tell()
             line = stream.readline()
+            if update_digest is not None:
+                update_digest(line)
             if not line or line.startswith(b">"):
                 if name is not None:
                     if not size:

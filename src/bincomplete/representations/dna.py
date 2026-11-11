@@ -17,7 +17,10 @@ def local_contract(
     """Describe frozen local weights and tokenizer without loading their model."""
     root = Path(path).resolve()
     if not root.is_dir():
-        raise ValueError("encoder_path must reference an existing local DNABERT-S directory")
+        raise ValueError(
+            "encoder_path must reference an existing local DNABERT-S directory. "
+            "Run bincomplete models install dnabert_s or configure the path to your local weights."
+        )
     files = {str(p): sha(p) for p in sorted(root.rglob("*")) if p.is_file()}
     config = read(root / "config.json")
     if "hidden_size" not in config or type(config["hidden_size"]) is not int:
@@ -93,6 +96,11 @@ def local_contract(
     )
 
 
+def _source_stamp(path: Path) -> tuple[int, int, int, int, int]:
+    status = path.stat()
+    return (status.st_dev, status.st_ino, status.st_size, status.st_mtime_ns, status.st_ctime_ns)
+
+
 def frozen_array(context, spec: dict[str, Any]):
     """Compute or reuse a bounded cached array using explicitly supplied local code."""
     space = spec["space"]
@@ -107,11 +115,13 @@ def frozen_array(context, spec: dict[str, Any]):
     )
     from ..numerical import torch_execution
 
+    assembly = Path(context.store.manifest["assembly"])
+    assembly_hash = context.store.manifest["inputs_sha256"][str(assembly)]
     identity = {
         "kind": "local_dnabert_s_v2",
         "space": space,
         "implementation": sha(__file__),
-        "assembly": context.store.manifest["inputs_sha256"][context.store.manifest["assembly"]],
+        "assembly": assembly_hash,
         "runtime": {name: version(name) for name in ("torch", "transformers")},
         "execution": spec.get("execution", {}),
         "numerical_runtime": torch_execution(spec.get("execution", {}).get("device", "cpu")),
@@ -127,6 +137,18 @@ def frozen_array(context, spec: dict[str, Any]):
         torch.set_num_threads(context.limits.threads)
         model, output, done = None, None, None
         try:
+            sources = {Path(path): digest for path, digest in spec["model_files"].items()}
+            sources[assembly] = assembly_hash
+            stamps = {path: _source_stamp(path) for path in sources}
+
+            def require_unchanged(path: Path) -> None:
+                if _source_stamp(path) != stamps[path]:
+                    raise ValueError(f"Encoder input changed during encoding: {path}")
+
+            for source, expected in sources.items():
+                if sha(source) != expected:
+                    raise ValueError(f"Encoder input changed since preparation: {source}")
+                require_unchanged(source)
             if space["pooling"] == "non_special_bp_weighted_windows":
                 from itertools import islice
                 from time import perf_counter
@@ -141,6 +163,8 @@ def frozen_array(context, spec: dict[str, Any]):
                 tokenizer, model = load_local_encoder(spec["model_path"])
                 model = model.to(device).eval()
                 model.requires_grad_(False)
+                for source in sources:
+                    require_unchanged(source)
                 dtype = execution["storage_dtype"]
                 checkpoint = path.with_name("encoder.checkpoint.npy")
                 flags = path.with_name("encoder.done.npy")
@@ -175,6 +199,7 @@ def frozen_array(context, spec: dict[str, Any]):
                         "Encoder contig group",
                     )
                     vectors = pooled_windows(tokenizer, model, group, space, execution)
+                    require_unchanged(assembly)
                     indices = todo[start : start + len(group)]
                     output[indices] = vectors
                     output.flush()
@@ -211,6 +236,8 @@ def frozen_array(context, spec: dict[str, Any]):
                 .eval()
             )
             model.requires_grad_(False)
+            for source in sources:
+                require_unchanged(source)
             output = np.lib.format.open_memmap(
                 path,
                 mode="w+",
@@ -244,6 +271,7 @@ def frozen_array(context, spec: dict[str, Any]):
                         or norm <= 1e-12
                     ):
                         raise ValueError("Frozen encoder returned an invalid vector")
+                    require_unchanged(assembly)
                     output[row] = vector / norm
             output.flush()
         finally:

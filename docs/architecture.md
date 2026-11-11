@@ -57,8 +57,23 @@ or `BINCOMPLETE_CACHE`; default is the platform user cache under `bincomplete`.
 Keep the cache separate from inputs and artifacts. Models and scientific evidence
 are never evicted.
 Eviction requires a completed entry with a matching content identity and only
-its expected array and receipt files. Incomplete entries and unrelated files
-are preserved; if they prevent admission, the cache reports a budget error.
+recognized files. Automatic eviction leaves interrupted entries available for
+resumption. Run `bincomplete cache clean` to preview removal of unused completed
+arrays in the configured cache. Add `--apply` to remove the selected entries.
+Pass `--cache PATH` to select another cache. Add `--include-incomplete` to
+discard inactive interrupted entries with a matching ownership receipt.
+Active entries and unrecognized files are skipped. Bundles written by
+`bincomplete encode` are stored outside the cache.
+Resuming encoding removes stale temporary progress files. Cleanup can also
+remove completed encoder entries that still contain those files.
+If another operation holds the cache lock, cleanup reports that the cache is
+busy. If deletion fails after invalidating an entry, retry cleanup with
+`--include-incomplete` after resolving the file error.
+
+```shell
+bincomplete cache clean --cache project-cache
+bincomplete cache clean --cache project-cache --apply
+```
 
 Prepared metadata/index files reference original assembly and embedding inputs.
 Fit matrices are scratch removed on success; episodes, group decisions, history,

@@ -494,6 +494,13 @@ def prepare_dataset(
     if any(p.is_relative_to(root) for p in paths):
         raise ValueError("Prepared output must not contain its input files")
     identities = {str(p): sha(p) for p in paths}
+    if embeddings is not None and embedding_ids is not None and embedding_space is not None:
+        from .encoding import verify_bundle
+
+        receipt = verify_bundle(assembly, embeddings, embedding_ids, embedding_space, input_hashes=identities)
+        if receipt is not None:
+            marker, digest = receipt
+            identities[str(marker)] = digest
     shared_arrays = []
     if shared_index is not None:
         source = shared_index.manifest

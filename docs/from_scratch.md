@@ -12,6 +12,8 @@ Before a real six-method run, have:
   if the upstream analysis retained only means.
 - Local DNABERT-S weights, or compatible precomputed vectors with their row IDs
   and original encoder-space manifest. The explicit installer below can obtain weights.
+  Use [`bincomplete encode`](inputs.md#precomputed-dnabert-s-vectors) to compute the
+  vectors once for reuse in later runs.
 - At least four unrelated multi-contig source groups for default attention epoch
   selection. HGB/logistic require at least two. Supply related-bin groups when
   known; treating each bin as unrelated does not establish independence.
@@ -28,8 +30,8 @@ contain spaces. Commands keep the same working directory unless stated otherwise
 
 Build the image from the BinComplete checkout. The build downloads the pinned
 dependencies and official DNABERT-S checkpoint. GitHub Actions checks the Linux
-x86-64 image by encoding ten artificial contigs and running all six methods in
-a container with networking disabled.
+x86-64 image by encoding ten artificial contigs and running all six methods
+with the saved vectors in a container with networking disabled.
 
 ```shell
 docker build --tag bincomplete:cpu .

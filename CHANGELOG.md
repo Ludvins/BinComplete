@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add `bincomplete encode` for reusable DNABERT-S bundles and
+  `bincomplete cache clean` to preview or remove unused rebuildable arrays.
+- Verify native embedding bundle receipts during input preparation and
+  preflight. Check source integrity before committing encoding checkpoints.
+- Resume within the original cache quota and recover from partial cleanup.
+- Remove encoder progress scratch on completion and recognize legacy progress
+  files during cache eviction.
 - Repair corrupted documentation arrows and release-header dashes, and reject
   common encoding artifacts during source readiness checks.
 - Wrap the documentation overview into a reverse-C flow. Reflow all diagrams

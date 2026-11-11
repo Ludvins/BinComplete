@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import errno
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -56,6 +58,10 @@ class ResourceLimits:
             )
 
 
+class LockBusyError(OSError):
+    """Another process holds a requested nonblocking lock."""
+
+
 class FileLock:
     """Hold a cross-process advisory lock until explicitly closed."""
 
@@ -63,12 +69,12 @@ class FileLock:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.stream = self.path.open("a+b")
-        self.stream.seek(0)
-        if self.stream.read(1) == b"":
-            self.stream.write(b"0")
-            self.stream.flush()
-        self.stream.seek(0)
         try:
+            # Reading the first byte itself can fail while a Windows process holds the lock.
+            if os.fstat(self.stream.fileno()).st_size == 0:
+                self.stream.write(b"0")
+                self.stream.flush()
+            self.stream.seek(0)
             if sys.platform == "win32":
                 import msvcrt
 
@@ -79,8 +85,10 @@ class FileLock:
 
                 mode = fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB)
                 fcntl.flock(self.stream.fileno(), mode)
-        except OSError:
+        except OSError as error:
             self.stream.close()
+            if not blocking and error.errno in {errno.EACCES, errno.EAGAIN}:
+                raise LockBusyError(error.errno, "Lock is held by another process", self.path) from error
             raise
 
     def close(self) -> None:

@@ -1,7 +1,7 @@
 """Bounded installed-wheel smoke with real, read-only local DNABERT-S weights.
 
 This uses ten 256-bp artificial contigs, CPU FP32, one thread and a 4 GiB
-allocation budget. All six toy methods fit after one shared real encoding.
+allocation budget. All six toy methods consume one saved encoding.
 No metagenomic study, expected HQ fixture or quality tool is opened.
 """
 
@@ -33,7 +33,8 @@ def smoke(encoder_path: Path, output: Path) -> dict:
     )
     started = time.monotonic()
     import bincomplete
-    from bincomplete.artifacts import read, save
+    from bincomplete.artifacts import read, save, verify_outputs
+    from bincomplete.cli import main
     from bincomplete.preflight import preflight
     from bincomplete.standard import STANDARD_METHODS
 
@@ -85,6 +86,23 @@ def smoke(encoder_path: Path, output: Path) -> dict:
             "encoder": {"batch_size": 2},
         },
     )
+    vectors = output / "embeddings"
+    assert (
+        main(
+            [
+                "encode",
+                "--assembly",
+                str(output / "assembly.fa"),
+                "--output",
+                str(vectors),
+                "--global-config",
+                str(output / "global.json"),
+            ]
+        )
+        == 0
+    )
+    verify_outputs(vectors, read(vectors / "complete.json"))
+    assert (vectors / "embedding_ids.txt").read_text(encoding="utf-8").splitlines() == ids
     save(
         output / "experiment.json",
         {
@@ -98,6 +116,9 @@ def smoke(encoder_path: Path, output: Path) -> dict:
                     "memberships": "members.tsv",
                     "coverage": "coverage.tsv",
                     "groups": "groups.tsv",
+                    "embeddings": "embeddings/embeddings.npy",
+                    "embedding_ids": "embeddings/embedding_ids.txt",
+                    "embedding_space": "embeddings/embedding_space.json",
                 }
             },
         },
@@ -105,7 +126,7 @@ def smoke(encoder_path: Path, output: Path) -> dict:
     report = preflight(output / "experiment.json")
     save(output / "preflight.json", report)
     assert report["ready"], report["errors"]
-    print(json.dumps({"stage": "raw_fasta_to_six_methods", "contigs": 10}), flush=True)
+    print(json.dumps({"stage": "saved_embeddings_to_six_methods", "contigs": 10}), flush=True)
     run = bincomplete.run_experiment(
         output / "experiment.json", progress=lambda row: print(json.dumps(row), flush=True)
     )

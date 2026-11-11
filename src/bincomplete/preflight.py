@@ -41,6 +41,9 @@ def _supplied_vectors(spec: dict, ids: list[str], limits: ResourceLimits) -> dic
         return None
     if not all(key in spec for key in keys):
         raise ValueError("Embeddings require the array, row IDs and embedding-space manifest together")
+    from .encoding import verify_bundle
+
+    verify_bundle(spec["assembly"], spec["embeddings"], spec["embedding_ids"], spec["embedding_space"])
     matrix = np.load(spec["embeddings"], mmap_mode="r", allow_pickle=False)
     try:
         rows = Path(spec["embedding_ids"]).read_text(encoding="utf-8").splitlines()

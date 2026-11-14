@@ -13,6 +13,7 @@ from .artifacts import read
 from .data import Dataset, _composition, _coverage, _membership_rows, bin_fasta_paths, fasta_records
 from .defaults import uses_embedding
 from .experiments.config import load_plan
+from .representations.validation import validate_l2
 from .resources import ResourceLimits
 
 
@@ -75,14 +76,7 @@ def _supplied_vectors(spec: dict, ids: list[str], limits: ResourceLimits) -> dic
             or space["normalization"] != "l2"
         ):
             raise ValueError("Supply the complete encoder-space contract with L2 normalization")
-        width = min(limits.chunk_size, max(1, limits.memory_bytes // max(1, matrix.shape[1] * 32)))
-        tolerance = 5e-4 if matrix.dtype == np.float16 else 1e-4
-        for start in range(0, len(rows), width):
-            block = np.asarray(matrix[start : start + width], np.float32)
-            if not np.isfinite(block).all() or not np.allclose(
-                np.linalg.norm(block, axis=1), 1, atol=tolerance, rtol=0
-            ):
-                raise ValueError("Embedding rows must be finite and already L2 normalized")
+        validate_l2(matrix, rows, limits, spec["embeddings"])
         return {"provider": "supplied", "dimension": matrix.shape[1], "space": space}
     finally:
         matrix._mmap.close()

@@ -109,7 +109,7 @@ def pooled_windows(tokenizer, model, windows, space, execution):
         [np.average(values, axis=0, weights=mass[i]) for i, values in enumerate(output)], np.float32
     )
     norms = np.linalg.norm(vectors, axis=1, keepdims=True)
-    if not np.isfinite(vectors).all() or (norms <= 1e-12).any():
+    if not np.isfinite(vectors).all() or not np.isfinite(norms).all() or (norms <= 1e-12).any():
         raise ValueError("Encoder returned invalid pooled sequence vectors")
     return vectors / norms
 

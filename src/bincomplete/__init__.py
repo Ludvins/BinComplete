@@ -1,7 +1,7 @@
 """BinComplete: membership-guided contig recruitment for bin completion.
 
 The public API deliberately exposes data, models, proposals and structural
-selections. Quality-tool execution and quality acceptance policies are external.
+selections. The optional assessment CLI runs user-installed quality tools.
 """
 
 from .data import Dataset, prepare_dataset

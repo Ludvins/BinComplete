@@ -334,9 +334,11 @@ a bin eligible for assessment. Record this screen in the external assessment pla
 and preserve the complete proposal inventory and previous results. This choice
 of assessment targets does not change the original-membership training labels.
 
-Export proposal IDs selected by that plan for evaluation with independently
-installed tools such as CheckM2 or RNA annotation software. Save externally
-approved proposal IDs in a text file, then reconcile and export:
+For a completed experiment, `bincomplete assess` can run installed CheckM2,
+Barrnap, and tRNAscan-SE, resume from verified checkpoints, and write a
+before-and-after report. See the [assessment setup](docs/evaluation.md#run-checkm2-and-rna-checks-with-bincomplete).
+To assess manually, export the planned proposal IDs, save externally approved
+IDs in a text file, then reconcile and export:
 
 ```shell
 bincomplete candidates --proposals proposals --output candidates.tsv
@@ -364,10 +366,9 @@ The candidate TSV includes full members, sequence-set identity and an explicit
 its proposal and recipient; use it to join external tool outputs without parsing
 JSON. These tables do not assign quality verdicts automatically.
 
-Quality-tool execution, quality thresholds, and biological acceptance policies
-remain external. See the [evaluation walkthrough](docs/evaluation.md).
-BinComplete interprets approved IDs without interpreting quality
-metrics.
+The optional assessment applies the documented pilot policy. Biological
+acceptance remains a separate review. `reconcile` uses approved IDs to
+check structural compatibility. See the [evaluation walkthrough](docs/evaluation.md).
 
 ## Python API
 

@@ -34,7 +34,7 @@ def main(argv: list[str] | None = None) -> int:
             raise
         print(f"bincomplete: error: {error}", file=sys.stderr)
         hint = "Use --debug for a traceback."
-        if arguments[:1] not in (["encode"], ["cache"]):
+        if arguments[:1] not in (["encode"], ["cache"], ["assess"]):
             hint += " Use preflight --config FILE to check experiment inputs."
         print(hint, file=sys.stderr)
         return 2
@@ -220,6 +220,14 @@ def _main(argv: list[str] | None = None) -> int:
     reconcile_command.add_argument("--protected-bins", type=Path)
     reconcile_command.add_argument("--time-limit", type=float, default=60.0)
     reconcile_command.add_argument("--output", type=Path, required=True)
+    assessment = commands.add_parser("assess", help="Assess saved proposals with CheckM2 and RNA tools")
+    assessment.add_argument("--experiment", type=Path, required=True)
+    assessment.add_argument("--config", type=Path, required=True)
+    assessment.add_argument("--output", type=Path, required=True)
+    assessment.add_argument("--mode", choices=("greedy", "full"), required=True)
+    assessment.add_argument("--max-rounds", type=int)
+    assessment.add_argument("--reuse-from", type=Path)
+    assessment.add_argument("--memory-gib", type=float, default=4.0)
     exporter = commands.add_parser("export", help="Materialize selected FASTAs once")
     source = exporter.add_mutually_exclusive_group(required=True)
     source.add_argument("--selection", type=Path)
@@ -235,6 +243,25 @@ def _main(argv: list[str] | None = None) -> int:
         if command in (training, proposal, sequence):
             command.add_argument("--cache", type=Path)
     args = parser.parse_args(arguments)
+    if args.command == "assess":
+        from .assessment import assess
+        from .assessment_tools import Paused
+
+        try:
+            assessment_summary = assess(
+                args.experiment,
+                args.config,
+                args.output,
+                mode=args.mode,
+                max_rounds=args.max_rounds,
+                reuse_from=args.reuse_from,
+                memory_gib=args.memory_gib,
+            )
+        except Paused:
+            print("Assessment paused during tool validation. Rerun to resume.", file=sys.stderr)
+            return 75
+        print(assessment_summary)
+        return 75 if read(assessment_summary)["state"] == "PAUSED" else 0
     if args.command == "encode":
         from .defaults import load_defaults
         from .encoding import encode

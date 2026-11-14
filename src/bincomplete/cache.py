@@ -80,7 +80,14 @@ class DerivedCache:
             self._feature_bytes += result.nbytes
         return result
 
-    def array(self, identity: Any, writer: Callable[[Path], None], *, expected_bytes: int) -> np.memmap:
+    def array(
+        self,
+        identity: Any,
+        writer: Callable[[Path], None],
+        *,
+        expected_bytes: int,
+        validate_cached: Callable[[np.memmap], None] | None = None,
+    ) -> np.memmap:
         """Map a verified derived array, reserving cache space before construction."""
         key = fingerprint(identity)
         if key in self._arrays:
@@ -98,11 +105,11 @@ class DerivedCache:
             try:
                 marker = folder / "complete.json"
                 destination = folder / "values.npy"
-                if marker.exists():
+                cached = marker.exists()
+                if cached:
                     proof = read(marker)
                     if proof["identity"] != identity or sha(destination) != proof["sha256"]:
                         raise ValueError("Derived cache integrity changed")
-                    self.hits += 1
                 else:
                     existing = self._entry_files(folder) if folder.exists() or folder.is_symlink() else set()
                     if existing is None or any(
@@ -143,8 +150,16 @@ class DerivedCache:
                         pending.unlink()
                     finally:
                         temporary.unlink(missing_ok=True)
-                os.utime(folder, None)
                 result = np.load(destination, mmap_mode="r", allow_pickle=False)
+                try:
+                    if cached and validate_cached is not None:
+                        validate_cached(result)
+                    os.utime(folder, None)
+                except BaseException:
+                    result._mmap.close()
+                    raise
+                if cached:
+                    self.hits += 1
                 self._arrays[key], self._leases[key] = result, lease
                 return result
             except BaseException:

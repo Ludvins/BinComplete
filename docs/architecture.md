@@ -66,6 +66,12 @@ Active entries and unrecognized files are skipped. Bundles written by
 `bincomplete encode` are stored outside the cache.
 Resuming encoding removes stale temporary progress files. Cleanup can also
 remove completed encoder entries that still contain those files.
+For a compatible encoding checkpoint, BinComplete rechecks stored rows marked
+done and re-encodes any that fail validation. Fresh batches are checked at their
+storage precision before they are marked done. Completed encoder caches and
+embedding bundles must pass the same finite-value and L2 checks as preflight.
+An invalid completed bundle is preserved. Use a new output directory to encode
+again.
 If another operation holds the cache lock, cleanup reports that the cache is
 busy. If deletion fails after invalidating an entry, retry cleanup with
 `--include-incomplete` after resolving the file error.

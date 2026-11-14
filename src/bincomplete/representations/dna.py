@@ -9,6 +9,7 @@ from typing import Any
 import numpy as np
 
 from ..artifacts import fingerprint, read, sha
+from . import validation
 
 
 def local_contract(
@@ -117,6 +118,10 @@ def frozen_array(context, spec: dict[str, Any]):
 
     assembly = Path(context.store.manifest["assembly"])
     assembly_hash = context.store.manifest["inputs_sha256"][str(assembly)]
+    ids, limits = context.store.ids, context.limits
+    dimension = space["dimension"]
+    dtype = np.dtype(spec.get("execution", {}).get("storage_dtype", "float32"))
+    tolerance = validation.l2_tolerance(dtype)
     identity = {
         "kind": "local_dnabert_s_v2",
         "space": space,
@@ -127,7 +132,11 @@ def frozen_array(context, spec: dict[str, Any]):
         "numerical_runtime": torch_execution(spec.get("execution", {}).get("device", "cpu")),
         "contigs_per_group": 16,
         "strand_pooling_implementation": sha(Path(__file__).with_name("strand_pooling.py")),
+        "embedding_validation": sha(validation.__file__),
     }
+
+    def validate(array, source):
+        validation.validate_encoder_matrix(array, ids, dimension, dtype, limits, source)
 
     def writer(path: Path) -> None:
         import torch
@@ -165,19 +174,31 @@ def frozen_array(context, spec: dict[str, Any]):
                 model.requires_grad_(False)
                 for source in sources:
                     require_unchanged(source)
-                dtype = execution["storage_dtype"]
                 checkpoint = path.with_name("encoder.checkpoint.npy")
                 flags = path.with_name("encoder.done.npy")
-                rows = len(context.store.ids)
+                rows = len(ids)
                 if checkpoint.exists() and flags.exists():
                     output = np.load(checkpoint, mmap_mode="r+", allow_pickle=False)
                     done = np.load(flags, mmap_mode="r+", allow_pickle=False)
                     if (
-                        output.shape != (rows, space["dimension"])
-                        or output.dtype != np.dtype(dtype)
+                        output.shape != (rows, dimension)
+                        or output.dtype != dtype
                         or done.shape != (rows,)
+                        or done.dtype != np.dtype(bool)
                     ):
                         raise ValueError("Encoder checkpoint identity or shape changed")
+                    width = validation.embedding_block_size(dimension, limits)
+                    reset = 0
+                    for start in range(0, rows, width):
+                        flags_block = done[start : start + width]
+                        invalid = flags_block & ~(
+                            validation.l2_errors(output[start : start + width]) <= tolerance
+                        )
+                        flags_block[invalid] = False
+                        reset += int(invalid.sum())
+                    if reset:
+                        done.flush()
+                        print(f"Re-encoding {reset} invalid checkpoint rows", flush=True)
                 else:
                     output = np.lib.format.open_memmap(
                         checkpoint, mode="w+", dtype=dtype, shape=(rows, space["dimension"])
@@ -198,10 +219,21 @@ def frozen_array(context, spec: dict[str, Any]):
                         + context.reserved_bytes,
                         "Encoder contig group",
                     )
-                    vectors = pooled_windows(tokenizer, model, group, space, execution)
-                    require_unchanged(assembly)
                     indices = todo[start : start + len(group)]
-                    output[indices] = vectors
+                    names = [ids[index] for index in indices]
+                    try:
+                        vectors = pooled_windows(tokenizer, model, group, space, execution)
+                    except ValueError as error:
+                        raise ValueError(
+                            f"Encoder batch for contig IDs {', '.join(names)}: {error}"
+                        ) from error
+                    with np.errstate(over="ignore", invalid="ignore"):
+                        stored = np.asarray(vectors, dtype=dtype)
+                    if stored.shape != (len(indices), dimension):
+                        raise ValueError(f"Invalid encoder batch shape for contig IDs {', '.join(names)}")
+                    validation.require_l2(validation.l2_errors(stored), tolerance, names, "encoder batch")
+                    require_unchanged(assembly)
+                    output[indices] = stored
                     output.flush()
                     done[indices] = True
                     done.flush()
@@ -219,6 +251,7 @@ def frozen_array(context, spec: dict[str, Any]):
                     save(checkpoint.with_suffix(".progress.json"), progress)
                     if start % 160 == 0:
                         print(f"Encoding {completed}/{rows} contigs", flush=True)
+                validate(output, "encoder matrix before cache publication")
                 done._mmap.close()
                 done = None
                 output._mmap.close()
@@ -241,8 +274,8 @@ def frozen_array(context, spec: dict[str, Any]):
             output = np.lib.format.open_memmap(
                 path,
                 mode="w+",
-                dtype=spec.get("execution", {}).get("storage_dtype", "float32"),
-                shape=(len(context.store.ids), space["dimension"]),
+                dtype=dtype,
+                shape=(len(ids), dimension),
             )
             with torch.inference_mode():
                 windows = context.store.sequence_windows(
@@ -266,14 +299,20 @@ def frozen_array(context, spec: dict[str, Any]):
                     vector = np.mean(pooled, axis=0)
                     norm = np.linalg.norm(vector)
                     if (
-                        vector.shape != (space["dimension"],)
+                        vector.shape != (dimension,)
                         or not np.isfinite(vector).all()
+                        or not np.isfinite(norm)
                         or norm <= 1e-12
                     ):
-                        raise ValueError("Frozen encoder returned an invalid vector")
+                        raise ValueError(f"Frozen encoder returned an invalid vector for contig {ids[row]!r}")
                     require_unchanged(assembly)
-                    output[row] = vector / norm
+                    stored = np.asarray([vector / norm], dtype=dtype)
+                    validation.require_l2(
+                        validation.l2_errors(stored), tolerance, [ids[row]], "encoder batch"
+                    )
+                    output[row] = stored[0]
             output.flush()
+            validate(output, "encoder matrix before cache publication")
         finally:
             if done is not None:
                 done._mmap.close()
@@ -285,9 +324,6 @@ def frozen_array(context, spec: dict[str, Any]):
     return context.cache.array(
         identity,
         writer,
-        expected_bytes=len(context.store.ids)
-        * space["dimension"]
-        * np.dtype(spec.get("execution", {}).get("storage_dtype", "float32")).itemsize
-        + len(context.store.ids)
-        + 4096,
+        expected_bytes=len(ids) * dimension * dtype.itemsize + len(ids) + 4096,
+        validate_cached=lambda matrix: validate(matrix, "completed encoder cache"),
     )

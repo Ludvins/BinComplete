@@ -1,0 +1,16 @@
+# Paths in this file resolve relative to the config.
+checkm2_database = "tools/CheckM2_database/uniref100.KO.1.dmnd"
+# Replace this example with the actual immutable images, or native runtime files
+# (including tool dependencies, models and configuration) used by your commands.
+runtime_files = ["tools/quality-runtime.sif"]
+# Extra environment names needed by your tool wrappers. Values are hashed in receipts.
+runtime_env = []
+batch_size = 128
+checkm2_threads = 4
+rna_threads = 2
+solver_seconds = 600
+
+[commands]
+checkm2 = ["checkm2"]
+barrnap = ["barrnap"]
+trnascan = ["tRNAscan-SE"]

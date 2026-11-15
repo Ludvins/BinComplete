@@ -5,6 +5,22 @@ selection. Generate it after evaluating proposals and running `reconcile`. This
 step reads saved outputs. It does not run CheckM2, rescore proposals, change the
 selection, or create FASTAs.
 
+For a run from [`bincomplete assess`](evaluation.md#run-checkm2-and-rna-checks-with-bincomplete),
+use `baseline.tsv` and `assessment.tsv` as sources when preparing the common
+assessment TSV described below. Leave unscored quality verdicts unknown.
+The common TSV's `trna_types` field requires a count of distinct amino acid
+types. Leave it blank if your assessment policy supplies only a reported-label
+count. In `hq_policy`, describe the criterion used for the supplied verdicts.
+
+A greedy assessment uses a fixed selection.
+To prepare a report for that selection, put its selected proposal IDs in the
+approval file and run `bincomplete reconcile` in a new directory with the
+same proposal artifacts and protected bins. Use that reconciliation in the report.
+For a full assessment, the standard reconciliation receipt can be used with
+its original solver time limit, protected bins, and proposal artifact order.
+Use one approved ID per `HQ_PASS` construction, choosing the first ID
+lexically from its `source_proposals` object, as the assessment does.
+
 ## Generate the report
 
 | What you want to review | Saved inputs to include |

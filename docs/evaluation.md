@@ -40,7 +40,7 @@ every proposal remains in the table and starts `UNASSESSED`. Model scores are ra
 not proof of genome quality. `candidates` accepts repeated `--proposals` flags to
 inventory more methods together; a candidate export takes one proposal artifact.
 
-A successful `bincomplete run` also writes the complete, priority-ordered
+A successful `bincomplete experiment` also writes the complete, priority-ordered
 `results/candidates.tsv` and its JSON receipt automatically. The command below
 creates an additional inventory for selected artifacts, such as a single method;
 use a new filename if one already exists for a different artifact set.
@@ -140,11 +140,107 @@ use the mapping to find each proposed recipient's original control; controls for
 other original bins remain available without enlarging the assessed recipient set.
 Preserve the mapping and export receipts alongside external assessment results.
 
-### Assess full constructions against controls
+## Run CheckM2 and RNA checks with BinComplete
+
+`bincomplete assess` takes the results directory produced by a completed
+`bincomplete experiment`. It uses the saved proposal inventory, its receipt,
+and the prepared dataset. Write to a separate assessment directory.
+
+Configure CheckM2 1.1.0, Barrnap 0.9, tRNAscan-SE 2.0.12 and the CheckM2
+database in `assess.toml`. Use `configs/assess.example.toml` from the checkout
+as a template. Set the database path and tool commands for your installation.
+BinComplete appends tool options to the configured command arrays. Use the
+actual immutable images or the native executables, models, dependencies, and
+configuration files in `runtime_files`. BinComplete hashes the declared files
+and uses a fixed environment for the assessment. For wrapper-specific environment
+variables, list their names in `runtime_env` so their values are passed and hashed.
+The runtime file paths and database path are relative to the TOML file. Use
+absolute paths for file arguments in command arrays. Keep prepared inputs and
+proposal artifacts accessible at the paths saved in the experiment.
+
+For Apptainer, a wrapper can bind the assessment directory and database at
+the same absolute paths inside the image and pass the tool arguments through.
+This example assumes the two variables name dedicated directories and the
+image contains CheckM2. Use analogous commands for Barrnap and tRNAscan-SE.
+
+```sh
+#!/bin/sh
+set -eu
+exec apptainer exec --cleanenv \
+    --bind "$ASSESSMENT_DIR:$ASSESSMENT_DIR" \
+    --bind "$QUALITY_DATABASE_DIR:$QUALITY_DATABASE_DIR:ro" \
+    --env "TMPDIR=$TMPDIR,OMP_NUM_THREADS=$OMP_NUM_THREADS,OPENBLAS_NUM_THREADS=$OPENBLAS_NUM_THREADS,MKL_NUM_THREADS=$MKL_NUM_THREADS,TF_NUM_INTRAOP_THREADS=$TF_NUM_INTRAOP_THREADS,TF_NUM_INTEROP_THREADS=$TF_NUM_INTEROP_THREADS,CUDA_VISIBLE_DEVICES=-1" \
+    /tools/quality-runtime.sif checkm2 "$@"
+```
+
+List the wrapper and image in `runtime_files`, and list the two directory
+variables in `runtime_env`. Give the database and assessment output paths only
+letters, digits, slashes, underscores, dots, plus signs, or hyphens on Linux.
+The pinned tools pass some paths through their own shell commands.
+
+```shell
+bincomplete assess --experiment results --config assess.toml --output quality-greedy --mode greedy --max-rounds 1
+bincomplete assess --experiment results --config assess.toml --output quality-full --mode full --reuse-from quality-greedy
+```
+
+Run in your existing CPU allocation with sufficient memory and disk for CheckM2.
+The example uses four CheckM2 threads and two RNA threads, with one tool active
+at a time. Assessment results, logs, and temporary directories go under the
+assessment output. Configure external wrappers to keep their writes there too.
+The `--memory-gib` option controls BinComplete's own allocation budget.
+
+- **Greedy** tests one next-ranked compatible construction per unresolved original
+  per round. Selection waits for the entire round, even across multiple batches.
+  A compatible HQ pass reserves its contigs and retires its recipient. Increase
+  the cumulative `--max-rounds` and rerun the command to continue.
+- **Full** tests the whole eligible catalog and uses `reconcile` to maximize
+  compatible gains. `--reuse-from` verifies and reuses the baseline and complete
+  batches from an assessment created by this command. Full mode keeps their
+  original matched controls and considers all qualifying alternatives. Keep the
+  source assessment directory available for verification on resume.
+
+The `canonical-trna18-v1` policy uses completeness above 90%, contamination below 5%,
+detected 5S, 16S and 23S rRNA, and at least 18 directly reported canonical amino-acid
+tRNA types across bacterial and archaeal scans. The RNA results record the
+qualifying types as `canonical_trna_types`. Partial rRNA detections count.
+Originals meeting this rule are protected. A matched original that passes HQ
+or lacks a score blocks gain selection for its recipient. These computational
+verdicts still require biological review. Use a new assessment directory when
+switching from the earlier reported-label policy.
+
+Read `summary.json` for coverage, gain counts, and stop reason. `activity.json`
+identifies the current tool, batch, and log path. Read `baseline.tsv`
+for original scores, `assessment.tsv` for individual construction results, and
+`before-after.tsv` for one row per original. Solver optimality and the solver bound
+apply to the reported selection scope. To retry a full-mode selection with more
+time, raise `solver_seconds` and rerun the same command. Verified quality checks
+are reused. The TSVs are refreshed when an assessment pauses, reaches its round
+limit, or finishes. At the round limit or completion,
+`selection.path` in `summary.json` gives the relative path to pass to
+`bincomplete export --selection`.
+
+```sh
+selection=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["selection"]["path"])' quality-full/summary.json)
+bincomplete export --selection "quality-full/$selection" --complete-directory --output refined-bins
+```
+
+Rerun the command after interruption or tool failure. The workflow verifies
+completed CheckM2 and RNA checkpoints, reuses valid results, and preserves logs.
+Use a new assessment directory after changing inputs, tool identity, or the
+batch plan. On POSIX, `SIGUSR1` requests a pause at the next tool boundary.
+For Slurm, use a controller-only early signal such as `--signal=B:USR1@300`
+with `exec bincomplete assess …` in the batch script. Allow enough time for the
+active tool to finish. A pause returns exit code 75, and
+`last_published_selection` retains any earlier completed selection. A hard
+allocation timeout may require repeating the interrupted tool stage.
+
+For browser review, follow the [Inspector report guide](reporting.md). Prepare
+the report's approved IDs and quality evidence in the formats described there.
+
+### Assess full constructions against controls manually
 
 Assess the exported full constructions and original controls using independently
-installed quality tools and an explicitly chosen acceptance policy. BinComplete
-does not launch CheckM2/RNA or interpret their thresholds. Keep the quality-tool
+installed quality tools and an explicitly chosen acceptance policy. Keep the quality-tool
 versions, settings, results and sequence-to-proposal mapping. Genome-quality
 assessment and biological/human review remain separate from membership scoring.
 

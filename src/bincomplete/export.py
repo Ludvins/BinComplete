@@ -19,7 +19,13 @@ from .resources import FileLock, ResourceLimits
 
 
 def _materialize(
-    dataset: Dataset, members: list[str], root: Path, positions: dict[str, int], limits: ResourceLimits
+    dataset: Dataset,
+    members: list[str],
+    root: Path,
+    positions: dict[str, int],
+    limits: ResourceLimits,
+    *,
+    sequence_hashes: dict[str, str] | None = None,
 ) -> tuple[Path, str]:
     members = sorted(members)
     index = root / "objects" / "memberships" / (fingerprint(members) + ".json")
@@ -36,6 +42,11 @@ def _materialize(
     try:
         with temporary.open("wb") as stream:
             for name, sequence in zip(members, dataset.sequences(rows, limits)):
+                if (
+                    sequence_hashes is not None
+                    and hashlib.sha256(sequence).hexdigest() != sequence_hashes[name]
+                ):
+                    raise ValueError(f"Assembly sequence changed: {name}")
                 header = b">" + name.encode("utf-8") + b"\n"
                 stream.write(header)
                 digest.update(header)

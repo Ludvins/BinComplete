@@ -316,7 +316,7 @@ class Dataset:
         from .sequence_io import read_sequence
 
         with sqlite3.connect(
-            f"file:{self.array_path('sequences.sqlite').as_posix()}?mode=ro", uri=True
+            self.array_path("sequences.sqlite").resolve().as_uri() + "?mode=ro", uri=True
         ) as db:
             with Path(self.manifest["assembly"]).open("rb") as stream:
                 for row in rows:
@@ -350,7 +350,7 @@ class Dataset:
         from .sequence_io import read_windows
 
         with sqlite3.connect(
-            f"file:{self.array_path('sequences.sqlite').as_posix()}?mode=ro", uri=True
+            self.array_path("sequences.sqlite").resolve().as_uri() + "?mode=ro", uri=True
         ) as db:
             columns = {row[1] for row in db.execute("PRAGMA table_info(sequence)")}
             layout = {"line_bases", "line_bytes"} <= columns

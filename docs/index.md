@@ -24,6 +24,7 @@ bincomplete demo --output demo
 | Use bins from another tool | [Generic binner workflow](generic_workflow.md) |
 | Set encoder paths, devices and resource limits | [Shared configuration](global_configuration.md) |
 | Interpret scores, priorities and proposal files | [Outputs, ranking and external evaluation](evaluation.md) |
+| Run CheckM2 and RNA checks on a completed experiment | [Resumable quality assessment](evaluation.md#run-checkm2-and-rna-checks-with-bincomplete) |
 | Review a completed run in the browser | [BinCompleteInspector](inspector.md) and [report export](reporting.md) |
 | Understand depth, features and model formulas | [Quantities](quantities.md) and [features](features.md) |
 
@@ -53,7 +54,7 @@ bincomplete demo --output demo
   </li>
   <li class="workflow-overview__step workflow-overview__step--external">
     <span class="workflow-overview__number" aria-hidden="true">5</span>
-    <span>Assess quality externally</span>
+    <span>Assess with external quality tools</span>
     <svg class="workflow-overview__arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
   </li>
   <li class="workflow-overview__step">
@@ -70,8 +71,8 @@ bincomplete demo --output demo
 
 Proposal scores describe agreement with the original membership signal. They are
 not HQ probabilities or estimates of completeness and contamination. Quality
-assessment, including any required RNA checks, remains external. The default
-assessment order preserves every proposal; a lab chooses its assessment budget.
+assessment uses external tools. Run them through `bincomplete assess` or follow
+the manual workflow. The default assessment order preserves every proposal.
 Read the [evaluation workflow](evaluation.md) before accepting refinements.
 
 ## Scientific scope

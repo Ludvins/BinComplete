@@ -37,7 +37,12 @@ class SelectionArtifact:
 
 
 def selection_identity(
-    manifests: list[dict[str, Any]], approved_ids: list[str], protected_bins: list[str], time_limit: float
+    manifests: list[dict[str, Any]],
+    approved_ids: list[str],
+    protected_bins: list[str],
+    time_limit: float,
+    *,
+    fixed: bool = False,
 ) -> str:
     """Return the identity recorded for a compatible selection's inputs."""
     return fingerprint(
@@ -47,14 +52,18 @@ def selection_identity(
             "protected": sorted(protected_bins),
             "time_limit": time_limit,
             "selection_version": 1,
+            **({"fixed": True} if fixed else {}),
         }
     )
 
 
-def load_proposals(artifacts: list[ProposalArtifact]) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+def load_proposals(
+    artifacts: list[ProposalArtifact], *, limits: ResourceLimits | None = None
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     """Read verified proposal memberships from one common prepared population."""
     proposals = {}
     population = None
+    memory = 0
     for artifact in artifacts:
         manifest = artifact.manifest
         if population is not None and population["dataset_identity"] != manifest["dataset_identity"]:
@@ -66,6 +75,9 @@ def load_proposals(artifacts: list[ProposalArtifact]) -> tuple[dict[str, dict[st
                 key = row["proposal_id"]
                 if key in proposals and proposals[key] != row:
                     raise ValueError("Conflicting proposal identity")
+                if limits is not None and key not in proposals:
+                    memory += 1024 + sum(72 + len(member) * 4 for member in row["members"])
+                    limits.require(memory, "Source proposal index")
                 proposals[key] = row
     if population is None:
         raise ValueError("Supply at least one proposal artifact")
@@ -80,6 +92,7 @@ def reconcile(
     protected_bins: list[str] | None = None,
     time_limit: float = 60.0,
     limits: ResourceLimits | None = None,
+    fixed: bool = False,
 ) -> SelectionArtifact:
     """Maximize compatible original recipients among externally approved proposals.
 
@@ -97,6 +110,8 @@ def reconcile(
         Whole optimization budget in seconds, including deterministic tie breaking.
     limits : ResourceLimits, optional
         Allocation and solver thread limits.
+    fixed : bool, default False
+        Verify and publish an already selected compatible set without solving.
 
     Returns
     -------
@@ -117,11 +132,17 @@ def reconcile(
         raise ValueError("Approved IDs must be unique saved proposal IDs")
     protected = set(protected_bins or [])
     rows = [all_rows[key] for key in sorted(approved_ids) if all_rows[key]["recipient"] not in protected]
+    if fixed and len(rows) != len(approved_ids):
+        raise ValueError("A fixed selection cannot replace a protected bin")
     limits.require(
         sum(len(row["members"]) for row in rows) * 128 + len(rows) * 1024, "Compatibility constraint matrices"
     )
     identity = selection_identity(
-        [artifact.manifest for artifact in artifacts], approved_ids, sorted(protected), time_limit
+        [artifact.manifest for artifact in artifacts],
+        approved_ids,
+        sorted(protected),
+        time_limit,
+        fixed=fixed,
     )
     root = Path(output).resolve()
     with FileLock(root.with_name(root.name + ".selection.lock")):
@@ -135,11 +156,11 @@ def reconcile(
                     keys[key] = len(keys)
                 rr.append(keys[key])
                 cc.append(column)
-        chosen = np.zeros(len(rows), bool)
+        chosen = np.full(len(rows), fixed, dtype=bool)
         optimal = canonical = True
-        upper_bound = 0.0
+        upper_bound = float(len(rows)) if fixed else 0.0
         started = time.monotonic()
-        if rows:
+        if rows and not fixed:
             matrix = coo_matrix((np.ones(len(rr)), (rr, cc)), shape=(len(keys), len(rows))).tocsc()
             constraints = LinearConstraint(matrix, -np.inf, 1)
 

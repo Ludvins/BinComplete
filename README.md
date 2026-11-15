@@ -3,7 +3,7 @@
 **A Python package for metagenomic bin refinement through contig recruitment.**
 
 Research beta. See the [documentation](https://ludvins.github.io/BinComplete/) to get started.
-Use [BinCompleteInspector](#inspect-completed-runs) to review a completed run. Available in [here](https://ludvins.github.io/BinComplete//inspector/).
+Use [BinCompleteInspector](#inspect-completed-runs) to review a completed run. Available in [here](https://ludvins.github.io/BinComplete/inspector/).
 
 BinComplete operates after an existing metagenomic binner. It learns contig
 membership from the bins that the binner produces, then uses those models to

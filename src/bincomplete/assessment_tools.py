@@ -19,8 +19,12 @@ from urllib.parse import unquote
 
 from .artifacts import fingerprint, sha
 
-POLICY = "rask-pilot-v1"
+POLICY = "canonical-trna18-v1"
 RRNA = {"5S_rRNA", "16S_rRNA", "23S_rRNA"}
+CANONICAL_TRNA = frozenset(
+    "Ala Arg Asn Asp Cys Gln Glu Gly His Ile Leu Lys Met Phe Pro Ser Thr Trp Tyr Val".split()
+)
+INTRON_BOUNDS = re.compile(r"[0-9]+(?:,[0-9]+)*")
 TOOLS = {
     "checkm2": ("--version", "1.1.0"),
     "barrnap": ("--version", "0.9"),
@@ -93,7 +97,7 @@ def numeric_pass(row: dict[str, Any]) -> bool:
 
 
 def full_hq(row: dict[str, Any]) -> bool:
-    """Apply the pilot's numerical and RNA rules."""
+    """Apply the numerical and canonical RNA criteria."""
     return numeric_pass(row) and bool(row["rna"] and row["rna"]["pass"])
 
 
@@ -166,7 +170,12 @@ def read_rna(output: Path) -> dict[str, Any]:
             raise ValueError(f"Invalid tRNAscan-SE table header: {table}")
         for line in lines[3:]:
             fields = line.split()
-            if len(fields) < 9 or not all(fields[i].isdigit() for i in (1, 2, 3, 6, 7)):
+            if (
+                len(fields) < 9
+                or not all(fields[i].isdigit() for i in (1, 2, 3))
+                or not all(INTRON_BOUNDS.fullmatch(fields[i]) for i in (6, 7))
+                or fields[6].count(",") != fields[7].count(",")
+            ):
                 raise ValueError(f"Malformed tRNAscan-SE record: {table}")
             try:
                 if not math.isfinite(float(fields[8])):
@@ -178,11 +187,13 @@ def read_rna(output: Path) -> dict[str, Any]:
         domains[domain] = {"rrna": sorted(hits & RRNA), "trna_labels": sorted(labels)}
         rrna.update(hits)
         trna.update(labels)
+    canonical = trna & CANONICAL_TRNA
     return {
         "domains": domains,
         "rrna": sorted(rrna & RRNA),
         "trna_labels": sorted(trna),
-        "pass": RRNA <= rrna and len(trna) >= 18,
+        "canonical_trna_types": sorted(canonical),
+        "pass": RRNA <= rrna and len(canonical) >= 18,
     }
 
 

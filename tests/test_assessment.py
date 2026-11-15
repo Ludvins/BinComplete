@@ -79,7 +79,15 @@ else:
     header += "--------\\t------\\t-----\\t-----\\t----\\t-----\\t-----\\t----\\t------\\n"
     offset = 0 if "-B" in args else 9
     stop = 18 if switch.read_text() == "zero" else offset + 9
-    rows = [f"contig\\t{i + 1}\\t1\\t40\\tLabel{i}\\tTAG\\t0\\t0\\t50.0\\n" for i in range(offset, stop)]
+    labels = "Ala Arg Asn Asp Cys Gln Glu Gly His Ile Leu Lys Met Phe Pro Ser Thr Trp Tyr Val".split()
+    rows = [f"contig\\t{i + 1}\\t1\\t40\\t{labels[i]}\\tTAG\\t0\\t0\\t50.0\\n" for i in range(offset, stop)]
+    if "-A" in args and switch.read_text() in {"multintron", "bad-introns", "noncanonical"}:
+        row = rows[-1]
+        if switch.read_text() == "noncanonical":
+            rows[-1] = row.replace(labels[stop - 1], "SeC")
+        else:
+            starts, ends = ("7,16,25", "9,19,29") if switch.read_text() == "multintron" else ("7,16,25", "9,19")
+            rows[-1] = row.replace("\\t0\\t0\\t", f"\\t{starts}\\t{ends}\\t")
     output.write_text(header + "".join(rows))
 """
 
@@ -337,10 +345,23 @@ def test_no_hits_and_all_no_proteins_have_reusable_evidence(assessment_run, tmp_
     assert assess(assessment_run, tmp_path / "full", "full", "--reuse-from", str(output)) == 0
 
 
+@pytest.mark.parametrize(("scenario", "expected"), [("multintron", 1), ("noncanonical", 0)])
+def test_ancestral_intron_format_and_canonical_union(assessment_run, tmp_path, scenario, expected):
+    assessment_run[3].write_text(scenario, encoding="utf-8")
+    output = tmp_path / "assessment"
+    assert assess(assessment_run, output, "greedy", "--max-rounds", "1") == 0
+    assert read(output / "summary.json")["compatible_hq_gains"] == expected
+    rna = json.loads(table(output / "baseline.tsv")[0]["rna_checks"])
+    assert len(rna["trna_labels"]) == 18
+    assert len(rna["canonical_trna_types"]) == 17 + expected
+    assert rna["pass"] is bool(expected)
+
+
 @pytest.mark.parametrize(
     ("scenario", "message"),
     [
         ("partial", "tRNAscan-SE reported a failed scan"),
+        ("bad-introns", "Malformed tRNAscan-SE record"),
         ("mutate", "Assessment input FASTA changed"),
     ],
 )

@@ -199,12 +199,14 @@ The `--memory-gib` option controls BinComplete's own allocation budget.
   original matched controls and considers all qualifying alternatives. Keep the
   source assessment directory available for verification on resume.
 
-The `rask-pilot-v1` policy uses completeness above 90%, contamination below 5%,
-detected 5S, 16S and 23S rRNA, and at least 18 distinct reported tRNA labels across
-bacterial and archaeal scans, excluding `Undet` and `Sup`. Partial rRNA detections
-count. Originals meeting this rule are protected. A matched original that passes
-HQ or lacks a score blocks gain selection for its recipient. These computational
-verdicts still require biological review.
+The `canonical-trna18-v1` policy uses completeness above 90%, contamination below 5%,
+detected 5S, 16S and 23S rRNA, and at least 18 directly reported canonical amino-acid
+tRNA types across bacterial and archaeal scans. The RNA results record the
+qualifying types as `canonical_trna_types`. Partial rRNA detections count.
+Originals meeting this rule are protected. A matched original that passes HQ
+or lacks a score blocks gain selection for its recipient. These computational
+verdicts still require biological review. Use a new assessment directory when
+switching from the earlier reported-label policy.
 
 Read `summary.json` for coverage, gain counts, and stop reason. `activity.json`
 identifies the current tool, batch, and log path. Read `baseline.tsv`

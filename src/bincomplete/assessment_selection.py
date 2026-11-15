@@ -344,6 +344,6 @@ def write_summary(
             ),
             "selection": selection,
             "last_published_selection": last_selection,
-            "quality_status": "Computational HQ under the RASK pilot policy",
+            "quality_status": "Computational HQ with at least 18 canonical tRNA types",
         },
     )

@@ -56,6 +56,18 @@ def _materialize(
         temporary.unlink(missing_ok=True)
 
 
+def export_identity(manifest: dict[str, Any], proposal_ids: list[str], complete_directory: bool) -> str:
+    """Return the identity recorded for an export's source and selected IDs."""
+    return fingerprint(
+        {
+            "source": manifest,
+            "ids": proposal_ids,
+            "complete_directory": complete_directory,
+            "export_version": 2,
+        }
+    )
+
+
 def export(
     source: SelectionArtifact | ProposalArtifact,
     output: str | Path,
@@ -103,14 +115,7 @@ def export(
         raise ValueError("A complete final bin directory requires a compatible selection")
     dataset = Dataset(Path(manifest["dataset"]))
     prepared = dataset.verify()
-    identity = fingerprint(
-        {
-            "source": manifest,
-            "ids": [row["proposal_id"] for row in rows],
-            "complete_directory": complete_directory,
-            "export_version": 2,
-        }
-    )
+    identity = export_identity(manifest, [row["proposal_id"] for row in rows], complete_directory)
     root = Path(output).resolve()
     with FileLock(root.with_name(root.name + ".export.lock")):
         if not _new_or_same(root, identity):

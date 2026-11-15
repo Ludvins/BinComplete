@@ -16,6 +16,8 @@ Run `bincomplete demo --output demo` to test installation without weights/data.
 | [Training protocol](training_protocol.md) | Original-membership labels, grouping and overlap |
 | [Experiments](experiments.md) | Artifacts, resumption and failures |
 | [External evaluation](evaluation.md) | TSV inventory, quality assessment, approvals and export |
+| [BinCompleteInspector](inspector.md) | Inspect a saved report locally in the browser |
+| [Export an inspector report](reporting.md) | Package saved proposals, evaluation and the final selection |
 | [Validation and performance](validation.md) | Support matrix, evidence scope and benchmark protocol |
 | [Architecture](architecture.md) | Resource/cache boundaries and provenance |
 | [Migration](migration.md) | Immutable historical artifacts and version changes |

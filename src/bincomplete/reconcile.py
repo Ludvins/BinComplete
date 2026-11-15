@@ -36,6 +36,21 @@ class SelectionArtifact:
         return read(self.path / "selection.json")
 
 
+def selection_identity(
+    manifests: list[dict[str, Any]], approved_ids: list[str], protected_bins: list[str], time_limit: float
+) -> str:
+    """Return the identity recorded for a compatible selection's inputs."""
+    return fingerprint(
+        {
+            "artifacts": manifests,
+            "approved_ids": sorted(approved_ids),
+            "protected": sorted(protected_bins),
+            "time_limit": time_limit,
+            "selection_version": 1,
+        }
+    )
+
+
 def load_proposals(artifacts: list[ProposalArtifact]) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     """Read verified proposal memberships from one common prepared population."""
     proposals = {}
@@ -105,14 +120,8 @@ def reconcile(
     limits.require(
         sum(len(row["members"]) for row in rows) * 128 + len(rows) * 1024, "Compatibility constraint matrices"
     )
-    identity = fingerprint(
-        {
-            "artifacts": [artifact.manifest for artifact in artifacts],
-            "approved_ids": sorted(approved_ids),
-            "protected": sorted(protected),
-            "time_limit": time_limit,
-            "selection_version": 1,
-        }
+    identity = selection_identity(
+        [artifact.manifest for artifact in artifacts], approved_ids, sorted(protected), time_limit
     )
     root = Path(output).resolve()
     with FileLock(root.with_name(root.name + ".selection.lock")):

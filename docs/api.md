@@ -166,6 +166,7 @@ Run `bincomplete --help` for the command list and
 | `init`, `preflight`, `experiment` | Initialize, check and run a configuration-driven experiment |
 | `prepare`, `fit`, `propose`, `run` | Explicit lower-level artifact stages |
 | `candidates`, `reconcile`, `export` | Review inventory, externally approved compatible selection and FASTAs |
+| `report` | Package completed results and supplied quality evidence for [BinCompleteInspector](reporting.md) |
 
 `python -m bincomplete` exposes the same commands. Installation-time model
 downloads are explicit; ordinary experiment commands do not fetch weights.

@@ -197,3 +197,6 @@ declared external policy. An approved construction for a bin that was already HQ
 is not automatically another HQ genome gained. See the
 [counting rules](validation.md#counting-quality-changes) for gains, losses,
 denominators and unassessed pairs.
+
+To explore a completed selection alongside its original bins, proposals, and
+external quality evidence, [export a report for BinCompleteInspector](reporting.md).

@@ -16,6 +16,11 @@ from .prioritization import DEFAULT_PRIORITY_LIMIT, PRIORITY_STRATEGY, PRIORITY_
 from .resources import FileLock, ResourceLimits
 
 
+def inventory_identity(manifests: list[dict], priority: dict) -> str:
+    """Return the identity recorded for a version 2 candidate inventory."""
+    return fingerprint({"inventory_version": 2, "artifacts": manifests, "priority": priority})
+
+
 def candidate_table(
     artifacts: list[ProposalArtifact],
     output: str | Path,
@@ -44,9 +49,7 @@ def candidate_table(
         "version": PRIORITY_VERSION,
         "first_tier_limit": priority_limit,
     }
-    identity = fingerprint(
-        {"inventory_version": 2, "artifacts": [m for _, m in manifests], "priority": priority}
-    )
+    identity = inventory_identity([m for _, m in manifests], priority)
     target = Path(output).resolve()
     proof = target.with_name(target.name + ".json")
     temporary = target.with_name(target.name + ".partial")

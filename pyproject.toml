@@ -59,7 +59,7 @@ python_version = "3.11"
 ignore_missing_imports = true
 follow_imports = "silent"
 check_untyped_defs = true
-files = ["src/bincomplete/sequence_io.py", "src/bincomplete/artifacts.py", "src/bincomplete/resources.py", "src/bincomplete/methods.py", "src/bincomplete/classifiers/logistic.py", "src/bincomplete/experiments", "src/bincomplete/standard.py", "src/bincomplete/environment.py", "src/bincomplete/cli.py", "src/bincomplete/defaults.py", "src/bincomplete/model_assets.py", "src/bincomplete/preflight.py", "src/bincomplete/demo.py", "src/bincomplete/inventory.py", "src/bincomplete/prioritization.py"]
+files = ["src/bincomplete/sequence_io.py", "src/bincomplete/artifacts.py", "src/bincomplete/resources.py", "src/bincomplete/methods.py", "src/bincomplete/classifiers/logistic.py", "src/bincomplete/experiments", "src/bincomplete/standard.py", "src/bincomplete/environment.py", "src/bincomplete/cli.py", "src/bincomplete/defaults.py", "src/bincomplete/model_assets.py", "src/bincomplete/preflight.py", "src/bincomplete/demo.py", "src/bincomplete/inventory.py", "src/bincomplete/prioritization.py", "src/bincomplete/report.py", "src/bincomplete/report_quality.py", "src/bincomplete/report_details.py"]
 
 [tool.setuptools.package-data]
 bincomplete = ["profiles/standard_v1/*.json"]

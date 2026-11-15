@@ -24,6 +24,7 @@ bincomplete demo --output demo
 | Use bins from another tool | [Generic binner workflow](generic_workflow.md) |
 | Set encoder paths, devices and resource limits | [Shared configuration](global_configuration.md) |
 | Interpret scores, priorities and proposal files | [Outputs, ranking and external evaluation](evaluation.md) |
+| Review a completed run in the browser | [BinCompleteInspector](inspector.md) and [report export](reporting.md) |
 | Understand depth, features and model formulas | [Quantities](quantities.md) and [features](features.md) |
 
 ## From original bins to reviewed refinements

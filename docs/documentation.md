@@ -39,6 +39,8 @@ zensical serve
 
 Open the local address printed by the command, normally
 [http://127.0.0.1:8000](http://127.0.0.1:8000). Changes to guides rebuild the preview.
+Open [`/inspector/`](http://127.0.0.1:8000/inspector/) on that preview and choose
+**Try synthetic report** to check the Inspector.
 Press Ctrl+C to stop it. This installs documentation tools only; it does not
 install BinComplete, download encoder weights or run any genome analyses.
 
@@ -93,7 +95,9 @@ enables publication:
 
 After a successful deployment, the site is available at
 [https://ludvins.github.io/BinComplete/](https://ludvins.github.io/BinComplete/).
-Check the workflow's deployment result after publishing changes.
+Check the workflow's deployment result and open
+[BinCompleteInspector](https://ludvins.github.io/BinComplete/inspector/) directly.
+Choose **Try synthetic report** to verify the deployed viewer.
 Pull requests validate documentation without publishing it. Setting
 `DOCS_PUBLISH_ENABLED` to `false` stops future deployments; it does not remove
 an already published site.

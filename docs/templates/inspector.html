@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Inspect BinComplete results and external assessment evidence locally.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>BinCompleteInspector</title>
+  <link rel="icon" href="{{ 'assets/logo.svg' | url }}">
+  <link rel="stylesheet" href="{{ 'assets/inspector.css' | url }}">
+  <script type="module" src="{{ 'assets/inspector.js' | url }}"></script>
+</head>
+<body>
+  <a class="skip-link" href="#inspector-main">Skip to content</a>
+  <header class="app-header">
+    <a class="brand" href="#" aria-label="BinCompleteInspector home">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      BinCompleteInspector
+    </a>
+    <nav id="inspector-nav" aria-label="Report views" hidden>
+      <a href="#overview">Overview</a><a href="#bins">Bins</a><a href="#proposals">Proposals</a>
+      <a href="#rna">RNA checks</a><a href="#methods">Methods</a><a href="#provenance">Provenance</a>
+    </nav>
+    <div class="header-actions">
+      <span id="inspector-report-name" class="report-name" aria-label="Open report filename" hidden></span>
+      <a href="{{ 'reporting/' | url }}">Help</a>
+      <button type="button" id="inspector-open" class="primary">Open report</button>
+    </div>
+  </header>
+  <input id="inspector-file" type="file" accept=".json,application/json" hidden>
+  <p id="inspector-status" role="status" aria-live="polite"></p>
+  <main id="inspector-main" tabindex="-1">
+    <section id="inspector-welcome" class="welcome panel" aria-labelledby="welcome-title">
+      <h1 id="welcome-title">Open a BinComplete report</h1>
+      <p>Inspect bin refinement results and RNA evidence.</p>
+      <div id="inspector-drop" class="drop-area">
+        <span class="file-mark" aria-hidden="true"></span>
+        <strong>Drop your report here</strong>
+        <button id="inspector-choose" type="button" class="primary">Choose JSON file</button>
+      </div>
+      <button id="inspector-example" type="button">Try synthetic report</button>
+      <p class="privacy">Your file stays in this browser.</p>
+    </section>
+    <div id="inspector-view" hidden></div>
+    <noscript>Enable JavaScript to open a report in this browser.</noscript>
+  </main>
+</body>
+</html>

@@ -37,6 +37,7 @@ def supported_files(root: Path) -> dict[str, Path]:
     for folder, suffixes in (
         ("src", {".py", ".json"}),
         ("docs", {".md", ".png", ".svg", ".css", ".js"}),
+        ("docs/templates", {".html"}),
         ("configs", {".json", ".toml", ".md"}),
         ("tools", {".py"}),
         ("tests", {".py"}),

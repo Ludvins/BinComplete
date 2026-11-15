@@ -175,10 +175,12 @@ runs/sampleA/
     methods/<method>/propose/<attempt>/
 ```
 
-Read `runs/sampleA/results/report.md` for the completed proposal artifact paths;
-resumed attempts can have different numbers. Use those paths in the
-[external assessment walkthrough](evaluation.md) to approve, reconcile and export
-constructions.
+After the experiment completes, pass `runs/sampleA/results` as the
+`--experiment` directory for [resumable assessment](evaluation.md#run-checkm2-and-rna-checks-with-bincomplete).
+To assess manually, use the proposal artifact paths in
+`runs/sampleA/results/report.md`. Resumed attempts can have different numbers.
+The [manual workflow](evaluation.md#assess-full-constructions-against-controls-manually)
+shows how to approve, reconcile and export constructions.
 
 The same unchanged experiment command verifies and resumes completed stages.
 Use a new output for another dataset. A run fits from original memberships; the

@@ -13,6 +13,7 @@ from typing import Any
 import numpy as np
 
 from .artifacts import complete, fingerprint, read, save, sha, verify_outputs
+from .representations.validation import l2_tolerance, validate_l2
 from .resources import FileLock, ResourceLimits
 
 
@@ -683,18 +684,8 @@ def prepare_dataset(
                     or space["normalization"] != "l2"
                 ):
                     raise ValueError("Supply the complete encoder-space contract with L2 normalization")
-                width = min(limits.chunk_size, max(1, limits.memory_bytes // max(1, matrix.shape[1] * 32)))
-                tolerance = 5e-4 if matrix.dtype == np.float16 else 1e-4
-                maximum_norm_error = 0.0
-                for a in range(0, len(rows), width):
-                    # Validate reduced-precision storage in float32 blocks, retaining
-                    # the original matrix and its values without renormalization.
-                    block = np.asarray(matrix[a : a + width], np.float32)
-                    norms = np.linalg.norm(block, axis=1)
-                    if not np.isfinite(block).all() or not np.allclose(norms, 1, atol=tolerance, rtol=0):
-                        raise ValueError("Embedding rows must be finite and already L2 normalized")
-                    if len(norms):
-                        maximum_norm_error = max(maximum_norm_error, float(np.abs(norms - 1).max()))
+                tolerance = l2_tolerance(matrix.dtype)
+                maximum_norm_error = validate_l2(matrix, rows, limits, str(embeddings))
                 np.save(root / "embedding_rows.npy", np.array([by_id[name] for name in ids], np.int64))
                 representation = {
                     "path": str(Path(embeddings).resolve()),

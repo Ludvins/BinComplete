@@ -11,9 +11,12 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+import numpy as np
+
 from .artifacts import complete, read, save, sha, verify_outputs
 from .cache import DerivedCache
 from .representations.dna import frozen_array, local_contract
+from .representations.validation import validate_encoder_matrix
 from .resources import FileLock, ResourceLimits
 from .sequence_io import read_sequence, scan_records, window_starts
 
@@ -162,6 +165,19 @@ def encode(
             ):
                 raise ValueError("Embedding output belongs to another request; choose a new output directory")
             verify_outputs(output, proof)
+            ids = (output / "embedding_ids.txt").read_text(encoding="utf-8").splitlines()
+            matrix = np.load(output / "embeddings.npy", mmap_mode="r", allow_pickle=False)
+            try:
+                validate_encoder_matrix(
+                    matrix,
+                    ids,
+                    space["dimension"],
+                    execution["storage_dtype"],
+                    limits,
+                    "completed embedding bundle",
+                )
+            finally:
+                matrix._mmap.close()
             return output
         if output.exists():
             raise FileExistsError(f"Embedding output already exists; choose a new directory: {output}")
@@ -200,6 +216,18 @@ def encode(
             ) as temporary:
                 stage = Path(temporary)
                 shutil.copyfile(cached, stage / "embeddings.npy")
+                matrix = np.load(stage / "embeddings.npy", mmap_mode="r", allow_pickle=False)
+                try:
+                    validate_encoder_matrix(
+                        matrix,
+                        store.ids,
+                        space["dimension"],
+                        execution["storage_dtype"],
+                        limits,
+                        "embedding export",
+                    )
+                finally:
+                    matrix._mmap.close()
                 with (stage / "embedding_ids.txt").open("w", encoding="utf-8", newline="\n") as stream:
                     for name in store.ids:
                         stream.write(name + "\n")

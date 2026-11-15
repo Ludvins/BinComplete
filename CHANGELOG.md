@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add `bincomplete assess` for resumable greedy and full assessment with CheckM2,
+  Barrnap, and tRNAscan-SE. Export the compatible selection with `bincomplete export`.
+- Add `bincomplete report` and BinCompleteInspector for browser review of
+  completed selections, external quality assessments and optional contig evidence.
 - Add `bincomplete encode` for reusable DNABERT-S bundles and
   `bincomplete cache clean` to preview or remove unused rebuildable arrays.
 - Verify native embedding bundle receipts during input preparation and

@@ -3,6 +3,7 @@
 **A Python package for metagenomic bin refinement through contig recruitment.**
 
 Research beta. See the [documentation](https://ludvins.github.io/BinComplete/) to get started.
+Use [BinCompleteInspector](#inspect-completed-runs) to review a completed run. Available in [here](https://ludvins.github.io/BinComplete/inspector/).
 
 BinComplete operates after an existing metagenomic binner. It learns contig
 membership from the bins that the binner produces, then uses those models to
@@ -369,6 +370,20 @@ JSON. These tables do not assign quality verdicts automatically.
 The optional assessment applies the documented pilot policy. Biological
 acceptance remains a separate review. `reconcile` uses approved IDs to
 check structural compatibility. See the [evaluation walkthrough](docs/evaluation.md).
+
+## Inspect completed runs
+
+After reconciliation, prepare a configuration using the
+[report export guide](docs/reporting.md) and run:
+
+```shell
+bincomplete report --config report.json --output bincomplete-report.json
+```
+
+Open the resulting JSON in [BinCompleteInspector](docs/inspector.md) to review
+HQ gains and losses, saved CheckM2 and RNA assessments, and the selected and
+evaluated proposals. Report files and any FASTAs opened in the sequence viewer
+stay in the browser.
 
 ## Python API
 

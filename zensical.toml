@@ -13,10 +13,10 @@ exclude_docs = "README.md"
 extra_css = ["stylesheets/extra.css"]
 extra_javascript = [
   "javascripts/mathjax.js",
-  "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js",
 ]
 nav = [
   { "Home" = "index.md" },
+  { "BinCompleteInspector" = "inspector.md" },
   { "Getting started" = [
     { "Installation and first run" = "from_scratch.md" },
     { "Inputs from other binners" = "generic_workflow.md" },
@@ -27,6 +27,7 @@ nav = [
     { "Configuration reference" = "configuration.md" },
     { "Running experiments" = "experiments.md" },
     { "Outputs, ranking and evaluation" = "evaluation.md" },
+    { "Export an inspector report" = "reporting.md" },
     { "Portable recipe" = "portable_recipe.md" },
     { "Migration" = "migration.md" },
   ] },
@@ -50,6 +51,7 @@ nav = [
 
 [project.theme]
 variant = "classic"
+custom_dir = "docs/templates"
 language = "en"
 logo = "assets/logo.svg"
 favicon = "assets/logo.svg"

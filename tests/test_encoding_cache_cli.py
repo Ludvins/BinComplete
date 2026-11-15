@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from bincomplete.artifacts import fingerprint, save
+from bincomplete.artifacts import fingerprint, read, save, sha
 from bincomplete.cache import DerivedCache
 from bincomplete.cli import main
 from bincomplete.data import prepare_dataset
@@ -326,6 +326,118 @@ def test_encode_resumes_within_original_cache_quota(tmp_path, monkeypatch, encod
     assert main(args) == 0
     assert calls == [16, 1, 1]
     assert not partial.exists()
+
+
+@pytest.mark.parametrize("bad_value", [0, np.nan, np.inf, 1e5, 0.95])
+def test_encode_rejects_invalid_stored_batch_before_marking_rows_done(
+    tmp_path, monkeypatch, capsys, encode_args, checkpoint_encoder, bad_value
+):
+    _, pooling = checkpoint_encoder
+
+    def encode_group(tokenizer, model, group, space, execution):
+        vectors = np.zeros((len(group), space["dimension"]), dtype=np.float32)
+        vectors[:, 0] = 1
+        vectors[3, 0] = bad_value
+        return vectors
+
+    monkeypatch.setattr(pooling, "pooled_windows", encode_group)
+    assert main(encode_args) == 2
+    assert "Invalid contig IDs: 'c3'" in capsys.readouterr().err
+    bitmap = next((tmp_path / "cache" / "arrays").glob("*/encoder.done.npy"))
+    assert not np.load(bitmap).any()
+    assert not (bitmap.parent / "complete.json").exists()
+    assert not (tmp_path / "embeddings").exists()
+
+
+def test_encode_recomputes_only_invalid_done_rows_on_resume(
+    tmp_path, monkeypatch, encode_args, checkpoint_encoder
+):
+    _, pooling = checkpoint_encoder
+    calls = []
+
+    def encode_group(tokenizer, model, group, space, execution):
+        calls.append(len(group))
+        if len(calls) == 2:
+            raise OSError("interrupted")
+        vectors = np.zeros((len(group), space["dimension"]), dtype=np.float32)
+        vectors[:, 0 if len(calls) == 1 else 1] = 1
+        return vectors
+
+    monkeypatch.setattr(pooling, "pooled_windows", encode_group)
+    assert main(encode_args) == 2
+    checkpoint = next((tmp_path / "cache" / "arrays").glob("*/encoder.checkpoint.npy"))
+    values = np.load(checkpoint)
+    values[3] = 0
+    values[8, 0] = np.nan
+    np.save(checkpoint, values)
+    assert main(encode_args) == 0
+    assert calls == [16, 1, 3]
+    repaired = np.load(tmp_path / "embeddings" / "embeddings.npy")
+    refreshed = np.array([3, 8, 16])
+    assert (repaired[refreshed, 1] == 1).all()
+    assert np.array_equal(np.delete(repaired, refreshed, axis=0), np.delete(values, refreshed, axis=0))
+
+
+def test_encode_checks_the_final_matrix_before_cache_publication(
+    tmp_path, monkeypatch, capsys, encode_args, checkpoint_encoder
+):
+    _, pooling = checkpoint_encoder
+
+    def encode_group(tokenizer, model, group, space, execution):
+        if len(group) == 1:
+            checkpoint = next((tmp_path / "cache" / "arrays").glob("*/encoder.checkpoint.npy"))
+            values = np.load(checkpoint, mmap_mode="r+")
+            values[3] = 0
+            values.flush()
+            values._mmap.close()
+        vectors = np.zeros((len(group), space["dimension"]), dtype=np.float32)
+        vectors[:, 0] = 1
+        return vectors
+
+    monkeypatch.setattr(pooling, "pooled_windows", encode_group)
+    assert main(encode_args) == 2
+    assert "encoder matrix before cache publication" in capsys.readouterr().err
+    assert not list((tmp_path / "cache" / "arrays").glob("*/complete.json"))
+    assert not (tmp_path / "embeddings").exists()
+
+
+@pytest.mark.parametrize("artifact", ["cache", "bundle"])
+def test_encode_rejects_invalid_completed_artifact_with_matching_hash(
+    tmp_path, monkeypatch, capsys, encode_args, checkpoint_encoder, artifact
+):
+    _, pooling = checkpoint_encoder
+    calls = []
+
+    def encode_group(tokenizer, model, group, space, execution):
+        calls.append(len(group))
+        vectors = np.zeros((len(group), space["dimension"]), dtype=np.float32)
+        vectors[:, 0] = 1
+        return vectors
+
+    monkeypatch.setattr(pooling, "pooled_windows", encode_group)
+    assert main(encode_args) == 0
+    if artifact == "cache":
+        matrix = next((tmp_path / "cache" / "arrays").glob("*/values.npy"))
+    else:
+        matrix = tmp_path / "embeddings" / "embeddings.npy"
+    receipt = matrix.with_name("complete.json")
+    values = np.load(matrix)
+    values[13] = 0
+    np.save(matrix, values)
+    proof = read(receipt)
+    if artifact == "cache":
+        proof["sha256"] = sha(matrix)
+    else:
+        proof["outputs_sha256"][matrix.name] = sha(matrix)
+    save(receipt, proof)
+    output = tmp_path / "retry"
+    args = [*encode_args, "--output", str(output)] if artifact == "cache" else encode_args
+    assert main(args) == 2
+    assert "Invalid contig IDs: 'c13'" in capsys.readouterr().err
+    assert not output.exists()
+    assert read(receipt) == proof
+    assert np.array_equal(np.load(matrix), values)
+    assert calls == [16, 1]
 
 
 def test_interrupted_encode_never_commits_a_group_from_changed_assembly(

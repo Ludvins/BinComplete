@@ -142,9 +142,13 @@ Preserve the mapping and export receipts alongside external assessment results.
 
 ## Run CheckM2 and RNA checks with BinComplete
 
-`bincomplete assess` evaluates a completed experiment. Configure CheckM2 1.1.0,
-Barrnap 0.9, tRNAscan-SE 2.0.12 and the CheckM2 database using
-[the example](https://github.com/Ludvins/BinComplete/blob/main/configs/assess.example.toml).
+`bincomplete assess` takes the results directory produced by a completed
+`bincomplete experiment`. It uses the saved proposal inventory, its receipt,
+and the prepared dataset. Write to a separate assessment directory.
+
+Configure CheckM2 1.1.0, Barrnap 0.9, tRNAscan-SE 2.0.12 and the CheckM2
+database in `assess.toml`. Use `configs/assess.example.toml` from the checkout
+as a template. Set the database path and tool commands for your installation.
 BinComplete appends tool options to the configured command arrays. Use the
 actual immutable images or the native executables, models, dependencies, and
 configuration files in `runtime_files`. BinComplete hashes the declared files
@@ -228,6 +232,9 @@ active tool to finish. A pause returns exit code 75, and
 `last_published_selection` retains any earlier completed selection. A hard
 allocation timeout may require repeating the interrupted tool stage.
 
+For browser review, follow the [Inspector report guide](reporting.md). Prepare
+the report's approved IDs and quality evidence in the formats described there.
+
 ### Assess full constructions against controls manually
 
 Assess the exported full constructions and original controls using independently
@@ -284,3 +291,6 @@ declared external policy. An approved construction for a bin that was already HQ
 is not automatically another HQ genome gained. See the
 [counting rules](validation.md#counting-quality-changes) for gains, losses,
 denominators and unassessed pairs.
+
+To explore a completed selection alongside its original bins, proposals, and
+external quality evidence, [export a report for BinCompleteInspector](reporting.md).

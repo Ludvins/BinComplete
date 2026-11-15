@@ -34,7 +34,7 @@ def main(argv: list[str] | None = None) -> int:
             raise
         print(f"bincomplete: error: {error}", file=sys.stderr)
         hint = "Use --debug for a traceback."
-        if arguments[:1] not in (["encode"], ["cache"], ["assess"]):
+        if arguments[:1] not in (["encode"], ["cache"], ["assess"], ["report"]):
             hint += " Use preflight --config FILE to check experiment inputs."
         print(hint, file=sys.stderr)
         return 2
@@ -174,6 +174,9 @@ def _main(argv: list[str] | None = None) -> int:
         default=40,
         help="Mark the first N proposals per method artifact/recipient as tier 1; retain every proposal",
     )
+    inspector_report = commands.add_parser("report", help="Package existing results for BinCompleteInspector")
+    inspector_report.add_argument("--config", type=Path, required=True)
+    inspector_report.add_argument("--output", type=Path, required=True)
     prepare = commands.add_parser("prepare", help="Index generic or mmlong2 inputs in place")
     prepare.add_argument("--input-format", choices=["generic", "mmlong2"], default="generic")
     prepare.add_argument("--input-root", type=Path)
@@ -327,6 +330,11 @@ def _main(argv: list[str] | None = None) -> int:
                 priority_limit=args.priority_limit,
             )
         )
+        return 0
+    if args.command == "report":
+        from .report import write_report
+
+        print(write_report(args.config, args.output))
         return 0
     if args.command == "config":
         from .defaults import load_defaults, method_defaults, write_defaults

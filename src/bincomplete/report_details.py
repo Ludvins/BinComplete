@@ -16,7 +16,7 @@ from .artifacts import read, sha
 from .data import Dataset
 from .engine import ProposalArtifact
 from .experiments.comparison import compare_proposals
-from .report_quality import table, text_field
+from .report_quality import number, table, text_field
 from .resources import ResourceLimits
 
 
@@ -187,26 +187,58 @@ def contig_evidence(
     }, source
 
 
-def _attention(manifest: dict[str, Any]) -> dict[str, Any] | None:
+def _model_details(manifest: dict[str, Any]) -> dict[str, Any]:
     root = Path(manifest["model"])
     if not (root / "complete.json").is_file():
-        return None
+        return {}
     files = read(root / "complete.json")["outputs_sha256"]
     if files.get("model.json") != manifest["model_sha256"]:
-        raise ValueError("Attention model metadata does not match its proposal artifact")
+        raise ValueError("Model metadata does not match its proposal artifact")
     for name in ("model.json", "summary.json", "selection_history.json"):
         if name in files and sha(root / name) != files[name]:
-            raise ValueError(f"Attention model output changed: {name}")
-    if "summary.json" not in files:
-        return None
-    epoch = read(root / "summary.json")["epochs"]
-    if "selection_history.json" not in files:
-        return {"epoch": epoch, "recall_at_5": None, "loss": None}
-    selected = next(row for row in read(root / "selection_history.json") if row["epoch"] == epoch)
-    return {"epoch": epoch, "recall_at_5": selected["validation_recall_at_5"], "loss": selected["loss"]}
+            raise ValueError(f"Model output changed: {name}")
+    model = read(root / "model.json")
+    summary = read(root / "summary.json") if "summary.json" in files else {}
+    stats, recipe = model["training_statistics"], model["recipe"]
+    output: dict[str, Any] = {
+        "training": {
+            "learned": model["learned"],
+            "sources": len(model["training_sources"]),
+            "groups": len(model["training_groups"]),
+            "rows": stats.get("rows"),
+            "positives": stats.get("positives"),
+            "episodes": stats.get("episodes"),
+            "features": len(summary["feature_schema"]) if "feature_schema" in summary else None,
+            "weighting": summary.get("weighting"),
+            "objective": summary.get("objective"),
+            "scorer": recipe["scorer"]["name"],
+            "retriever": recipe["retriever"]["name"],
+            "classifier": (recipe.get("classifier") or {}).get("name"),
+        }
+    }
+    if manifest["method"] == "single" and "epochs" in summary:
+        epoch = summary["epochs"]
+        history = read(root / "selection_history.json") if "selection_history.json" in files else []
+        selected: dict[str, Any] = next((row for row in history if row["epoch"] == epoch), {})
+        selection = summary.get("inner_group_selection") or {}
+        output["attention_validation"] = {
+            "epoch": epoch,
+            "precision_at_5": selected.get("validation_precision_at_5"),
+            "recall_at_5": selected.get("validation_recall_at_5"),
+            "loss": selected.get("loss"),
+            "held_out_sources": len(selection["validation_sources"])
+            if "validation_sources" in selection
+            else None,
+            "held_out_groups": len(selection["validation_groups"])
+            if "validation_groups" in selection
+            else None,
+        }
+    return output
 
 
-def method_comparison(manifests: dict[Path, dict[str, Any]]) -> dict[str, Any]:
+def method_comparison(
+    manifests: dict[Path, dict[str, Any]], benchmark_results_path: Path | None = None
+) -> dict[str, Any]:
     """Reuse the experiment comparison without exposing stored filesystem paths."""
     indexed = {
         read(path / "complete.json")["identity"]: (path, manifest) for path, manifest in manifests.items()
@@ -215,7 +247,51 @@ def method_comparison(manifests: dict[Path, dict[str, Any]]) -> dict[str, Any]:
         {key: ProposalArtifact(path) for key, (path, _) in indexed.items()}, ResourceLimits()
     )
     for key, row in data["methods"].items():
+        manifest = indexed[key][1]
         row.pop("artifact")
-        if row["method"] == "single":
-            row["attention_validation"] = _attention(indexed[key][1])
+        row.update(_model_details(manifest))
+        search = manifest.get("search", {})
+        if search:
+            row["search"] = {
+                "name": search["name"],
+                **{
+                    field: search["params"][field]
+                    for field in ("max_checks", "singleton_depth", "boundary_width", "max_added_fraction")
+                    if field in search.get("params", {})
+                },
+            }
+    if benchmark_results_path is not None:
+        source_sha = sha(benchmark_results_path)
+        seen = set()
+        columns = {"artifact_id", "benchmark_id", "protocol", "precision_at_5", "recall_at_5"}
+        for entry in table(benchmark_results_path, columns):
+            identity = entry["artifact_id"]
+            if identity not in data["methods"] or identity in seen:
+                raise ValueError(f"Unknown or repeated benchmark artifact: {identity!r}")
+            seen.add(identity)
+            values = {
+                key: number(entry[key], key) if entry[key].strip() else None
+                for key in ("precision_at_5", "recall_at_5")
+            }
+            if all(value is None for value in values.values()) or any(
+                not 0 <= value <= 1 for value in values.values() if value is not None
+            ):
+                raise ValueError(
+                    "Benchmark results require Precision@5 or Recall@5 as a fraction from 0 to 1"
+                )
+            counts = {}
+            for field in ("evaluated_bins", "evaluated_groups", "evaluated_episodes"):
+                raw = entry.get(field, "").strip()
+                if raw:
+                    if not raw.isascii() or not raw.isdigit():
+                        raise ValueError(f"Invalid benchmark count for {field}: {raw!r}")
+                    counts[field] = int(raw)
+            data["methods"][identity]["benchmark"] = {
+                **values,
+                **counts,
+                "benchmark_id": text_field(entry["benchmark_id"], "benchmark ID"),
+                "protocol": text_field(entry["protocol"], "benchmark protocol"),
+                "run_id": entry.get("run_id", "").strip() or None,
+                "report_sha256": source_sha,
+            }
     return data

@@ -1,8 +1,9 @@
 import { prepareReport } from "./inspector-data.js";
 import { example } from "./inspector-example.js";
+import { methodCatalog, methodComparison } from "./inspector-methods.js";
 import { el, link, pageTitle } from "./inspector-ui.js";
 import {
-  binDetail, binsView, methodCatalog, methodComparison, overview, proposalDetail, proposalsView, provenance, rnaView,
+  binDetail, binsView, overview, proposalDetail, proposalsView, provenance, rnaView,
 } from "./inspector-views.js";
 
 const element = (id) => document.getElementById(`inspector-${id}`);

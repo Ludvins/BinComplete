@@ -646,46 +646,6 @@ export function rnaView(report) {
       el("p", "footnote", "MIMAG HQ also requires >90% completeness and <5% contamination.")))));
 }
 
-export function methodCatalog(report) {
-  const ids = new Set(report.proposals.map((row) => row.method));
-  for (const row of Object.values(report.comparison?.methods ?? {})) ids.add(row.method);
-  const columns = [column("Stored profile", (row) => row[0], (row) => syntax(row[0])), column("Method", (row) => row[1]),
-    column("Candidate pool", (row) => row[2]), column("Membership score", (row) => row[3]), column("In report", (row) => ids.has(row[0]) ? "Yes" : "No")];
-  return el("div", "", pageTitle("Methods and ranking"),
-    stats([["Stored profiles", num(Object.keys(methods).length)], ["Profiles in report", num(ids.size)], ["Run results", link("Method comparison →", "#methods/comparison")]]),
-    headTable("Method profiles", columns, Object.entries(methods).map(([id, data]) => [id, ...data])),
-    el("div", "split equal description", panel("Assessment order", el("p", "description", syntax(report.provenance.priority?.strategy ?? "size_balanced_mean")),
-      details([["Within-size rank", "Descending mean score, then proposal ID"], ["Priority rank", "Round-robin across addition sizes"],
-        ["Tier 1", report.provenance.priority ? `First ${num(report.provenance.priority.first_tier_limit)} per method and recipient` : "First 40 by default"], ["Tier 2", "Remaining proposals"]])),
-    panel("Score scope", el("p", "description", "Use membership scores within the same method artifact and recipient. Mean added score drives within-size rank. Minimum added score describes the weakest scored donor."),
-      el("p", "description", "Held-out Recall@5 measures attention validation on hidden original members."))));
-}
-
-export function methodComparison(report) {
-  const data = report.comparison;
-  const title = pageTitle("Method comparison", { breadcrumb: link("Methods", "#methods") });
-  if (!data) return el("div", "", title, el("p", "notice", "Method comparison is unavailable in this report."));
-  const profiles = Object.entries(data.methods);
-  const profileTag = ([id, row]) => profiles.filter(([, model]) => model.method === row.method).length > 1 ? `${row.method} · ${id.slice(0, 8)}` : row.method;
-  const names = new Map(profiles.map(([id, row]) => [id, profileTag([id, row])]));
-  const comparisonColumns = [column("Profile", (row) => row[1].method, (row) => syntax(profileTag(row))),
-    ...[["Recipients", "evaluated_recipients"], ["Candidates scored", "scored_candidates"], ["Proposals", "proposals"],
-      ["Distinct constructions", "distinct_constructions"], ["Unique to artifact", "constructions_unique_to_method"]]
-      .map(([label, field]) => column(label, (row) => row[1][field], (row) => num(row[1][field])))];
-  const overlapColumns = [column("Profiles", (row) => row.methods.map((id) => names.get(id)).join(" / ")),
-    column("Common recipients", (row) => row.common_recipients), column("Identical constructions", (row) => row.identical_constructions),
-    column("Recipients with overlap", (row) => row.recipients_with_identical_constructions)];
-  const attention = profiles.filter(([, row]) => row.attention_validation);
-  return el("div", "", title,
-    stats([["Recipients", num(report.summary.recipients)], ["Method artifacts", num(profiles.length)], ["Proposals", num(report.proposals.length)],
-      ["Distinct full constructions", num(data.distinct_construction_union)], ["Donors proposed for multiple recipients", num(data.donor_contigs_proposed_for_multiple_recipients)]]),
-    headTable("Saved method outputs", comparisonColumns, profiles),
-    el("div", "split", panel("Pairwise overlap", el("div", "description", staticTable("Pairwise overlap", overlapColumns, data.pairwise))),
-      panel("Attention validation", ...(attention.length ? attention.map(([id, row]) => details([["Profile", syntax(names.get(id))],
-        ["Held-out Recall@5", score(row.attention_validation.recall_at_5)], ["Epochs used for refit", num(row.attention_validation.epoch)],
-        ["Training loss at selected epoch", score(row.attention_validation.loss)]])) : [el("p", "footnote", "No attention validation saved in this report.")]))));
-}
-
 export function provenance(report) {
   const p = report.provenance;
   const sources = [column("Tool", (row) => row.tool), column("Version", (row) => row.version), column("Input", (row) => row.format),

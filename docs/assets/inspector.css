@@ -328,6 +328,16 @@ button.contig-point[aria-pressed="true"] { z-index: 1; outline: 2px solid #163d7
 .contig-sequence input { max-width: 100%; }
 .contig-sequence-output { display: grid; gap: 8px; margin-top: 8px; justify-items: start; }
 .contig-sequence-output textarea { width: 100%; min-height: 105px; resize: vertical; padding: 8px; border: 1px solid var(--line); border-radius: 5px; font-family: monospace; }
+.method-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.method-toolbar a, .method-name { font-weight: 700; }
+.method-caption { margin: 7px 0 11px; }
+.split.method-evidence { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+.method-evidence .data-table :is(th, td) { padding-inline: 10px; }
+.method-run { display: block; margin-top: 3px; color: var(--muted); }
+.method-detail:not(:empty), .method-profiles { margin-top: 19px; }
+.method-detail .padded h2 { font-size: 19px; }
+.method-gain { color: var(--green); }
+.method-loss { color: var(--amber); }
 .welcome { max-width: 740px; margin: clamp(28px, 11vh, 140px) auto 0; text-align: center; padding: clamp(20px, 4vw, 42px); }
 .welcome > p { color: var(--muted); margin: 13px 0 0; }
 .drop-area { display: grid; justify-items: center; gap: 15px; padding: 33px 16px; border: 2px dashed #b9cce3; border-radius: 10px; margin: 28px 0 20px; background: #f7faff; }
@@ -344,6 +354,7 @@ button.contig-point[aria-pressed="true"] { z-index: 1; outline: 2px solid #163d7
   main { padding-inline: 22px; }
   .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 0; }
   .stats div:nth-child(3n + 1) { border: 0; }
+  .split.method-evidence { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 800px) {
   .split, .split.equal, .trio { grid-template-columns: minmax(0, 1fr); }

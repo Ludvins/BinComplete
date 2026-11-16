@@ -115,7 +115,16 @@ const methodRows = Object.fromEntries(methodIds.map((method, i) => {
   const total = proposals.filter((row) => row.method === method).length;
   return [method, { method, evaluated_recipients: 190, scored_candidates: 12840 - (i % 3) * 260,
     proposals: total, distinct_constructions: total, constructions_unique_to_method: total,
-    ...(method === "single" ? { attention_validation: { epoch: 18, recall_at_5: .62, loss: 1.36 } } : {}) }];
+    training: method === "cosine" ? { learned: false, sources: 0, groups: 0, rows: 0, episodes: 0,
+      scorer: "cosine_membership", retriever: "all_eligible" } : { learned: true, sources: 42, groups: 34, rows: 15480,
+      positives: 4070, episodes: 2560, weighting: "source_balanced" },
+    search: { name: "expanded_ranked_alternatives", max_checks: 128, singleton_depth: 50, boundary_width: 2, max_added_fraction: 1 },
+    ...(method === "single" ? { attention_validation: { epoch: 18, recall_at_5: .62, loss: 1.36,
+      held_out_sources: 6, held_out_groups: 4 } } : {}),
+    ...(["hgb_full_pool", "logistic_full_pool"].includes(method) ? { benchmark: {
+      precision_at_5: method === "hgb_full_pool" ? .55 : .48, recall_at_5: method === "hgb_full_pool" ? .66 : .61,
+      benchmark_id: "Synthetic benchmark", protocol: "Group-disjoint test", run_id: "Synthetic run",
+      evaluated_bins: 24, evaluated_groups: 12, evaluated_episodes: 96, report_sha256: "f".repeat(64) } } : {}) }];
 }));
 
 export const example = {

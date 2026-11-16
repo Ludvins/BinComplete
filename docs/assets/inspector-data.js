@@ -188,14 +188,33 @@ function guardLegacyComparisons(report) {
 }
 
 function comparison(value) {
+  const proportion = (item) => item == null || (finite(item) && item >= 0 && item <= 1);
+  const optionalCount = (item) => item == null || count(item);
   return record(value) && count(value.distinct_construction_union) && count(value.common_recipients_all_methods)
     && record(value.methods) && Object.values(value.methods).every((row) => record(row) && text(row.method)
       && [row.evaluated_recipients, row.scored_candidates, row.proposals, row.distinct_constructions].every(count)
       && (row.attention_validation == null || (record(row.attention_validation)
-        && count(row.attention_validation.epoch) && number(row.attention_validation.recall_at_5) && number(row.attention_validation.loss))))
+        && count(row.attention_validation.epoch) && proportion(row.attention_validation.recall_at_5)
+        && proportion(row.attention_validation.precision_at_5) && number(row.attention_validation.loss)
+        && [row.attention_validation.held_out_sources, row.attention_validation.held_out_groups].every(optionalCount)))
+      && (row.training == null || (record(row.training) && bool(row.training.learned)
+        && ["sources", "groups", "rows", "positives", "episodes", "features"].every((key) => optionalCount(row.training[key]))
+        && ["weighting", "objective", "scorer", "retriever", "classifier"].every((key) => row.training[key] == null || text(row.training[key]))))
+      && (row.search == null || (record(row.search) && text(row.search.name)
+        && [row.search.max_checks, row.search.singleton_depth, row.search.boundary_width].every(optionalCount)
+        && (row.search.max_added_fraction == null || finite(row.search.max_added_fraction))))
+      && (row.benchmark == null || (record(row.benchmark) && text(row.benchmark.benchmark_id)
+        && text(row.benchmark.protocol) && sha256(row.benchmark.report_sha256)
+        && (row.benchmark.run_id == null || text(row.benchmark.run_id))
+        && (row.benchmark.precision_at_5 != null || row.benchmark.recall_at_5 != null)
+        && [row.benchmark.precision_at_5, row.benchmark.recall_at_5].every(proportion)
+        && [row.benchmark.evaluated_bins, row.benchmark.evaluated_groups, row.benchmark.evaluated_episodes].every(optionalCount))))
     && Array.isArray(value.pairwise) && value.pairwise.every((pair) => record(pair) && Array.isArray(pair.methods)
       && pair.methods.length === 2 && pair.methods.every((method) => Object.hasOwn(value.methods, method))
-      && count(pair.common_recipients) && count(pair.identical_constructions));
+      && count(pair.common_recipients) && count(pair.identical_constructions))
+    && (value.exact_method_intersections == null || (Array.isArray(value.exact_method_intersections)
+      && value.exact_method_intersections.every((group) => record(group) && count(group.constructions)
+        && Array.isArray(group.methods) && group.methods.every((method) => Object.hasOwn(value.methods, method)))));
 }
 
 export function prepareReport(report) {

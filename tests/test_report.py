@@ -150,6 +150,46 @@ def test_report_exports_selected_contig_evidence(tmp_path, saved_run, dataset, l
         write_report(config_path, tmp_path / "changed-sequence.json")
 
 
+def test_report_includes_benchmark_results_and_saved_training(tmp_path, saved_run):
+    config, _, _, _ = saved_run
+    identity = read(tmp_path / "second" / "complete.json")["identity"]
+    config_path = tmp_path / "config.json"
+    metrics_path = tmp_path / "metrics.tsv"
+    header = [
+        "artifact_id",
+        "benchmark_id",
+        "protocol",
+        "precision_at_5",
+        "recall_at_5",
+        "run_id",
+        "evaluated_groups",
+    ]
+    assessment(metrics_path, header, [(identity, "holdout-v1", "group-disjoint test", 0, 0.35, "run-1", 12)])
+    config["benchmark_results"] = metrics_path.name
+    save(config_path, config)
+    report = read(write_report(config_path, tmp_path / "report.json"))
+    rows_by_artifact = report["comparison"]["methods"]
+    row = rows_by_artifact[identity]
+    assert row["training"]["learned"]
+    assert row["training"]["positives"] > 0
+    assert row["training"]["rows"] >= row["training"]["positives"]
+    assert row["search"]["max_checks"] > 0
+    assert row["benchmark"] == {
+        "benchmark_id": "holdout-v1",
+        "protocol": "group-disjoint test",
+        "precision_at_5": 0,
+        "recall_at_5": 0.35,
+        "run_id": "run-1",
+        "evaluated_groups": 12,
+        "report_sha256": hashlib.sha256(metrics_path.read_bytes()).hexdigest(),
+    }
+    assert "attention_validation" not in row
+    assert all("benchmark" not in item for key, item in rows_by_artifact.items() if key != identity)
+    assessment(metrics_path, header, [(identity, "holdout-v1", "group-disjoint test", 48, "", "", "")])
+    with pytest.raises(ValueError, match="fraction from 0 to 1"):
+        write_report(config_path, tmp_path / "invalid.json")
+
+
 def test_report_imports_checkm2_and_verdicts_and_preserves_proposal_states(tmp_path, saved_run):
     config, gain, loss, duplicate = saved_run
     before, after, verdicts = (tmp_path / name for name in ("before.tsv", "after.tsv", "verdicts.tsv"))

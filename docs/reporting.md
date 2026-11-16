@@ -165,6 +165,31 @@ select a matching uncompressed FASTA, such as the final bin FASTA. Feature
 sequences are shown in the annotated strand orientation. The browser checks
 the contig ID, length, and sequence digest.
 
+## Include method benchmark results
+
+The **Methods** page shows **Training validation** from saved model artifacts.
+For attention models, this includes retrieval scores on the held-out groups
+used for epoch selection when available. **Benchmark results** shows separately
+measured test scores supplied with the report. **Proposal outcomes** shows
+evaluations and final selections, with HQ gains and losses counted for
+comparable bins with selected proposals.
+
+To add ranking scores from a completed benchmark on any host, set
+`"benchmark_results": "review/benchmark-results.tsv"` in the report
+configuration. Supply one row per artifact using the proposal artifact identity
+from its `complete.json`.
+
+```tsv
+artifact_id	benchmark_id	protocol	precision_at_5	recall_at_5	run_id	evaluated_bins	evaluated_groups	evaluated_episodes
+YOUR_ARTIFACT_ID	YOUR_BENCHMARK_ID	group-disjoint test	0.48	0.61	YOUR_RUN_ID	24	12	96
+```
+
+Use fractions from 0 to 1 and supply at least one metric. The run ID and sample
+counts are optional. Use the same benchmark ID and protocol for scores that
+share the dataset, split, candidate-pool rules, and metric definitions.
+Record any overlap with training in the protocol. Older reports display the
+metrics they contain. Re-export from saved artifacts to include benchmark scores.
+
 ## Interpret the inspector
 
 The summary compares each recipient with its final selected construction or

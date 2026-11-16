@@ -340,7 +340,12 @@ def _assemble(config: dict[str, Any], base: Path) -> dict[str, Any]:
         },
         "summary": _summary(bins),
         "rna_summary": _rna_summary(bins),
-        "comparison": method_comparison(manifests),
+        "comparison": method_comparison(
+            manifests,
+            base / text_field(config["benchmark_results"], "benchmark results path")
+            if "benchmark_results" in config
+            else None,
+        ),
         "bins": bins,
     }
 

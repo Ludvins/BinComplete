@@ -159,6 +159,9 @@ code { font-family: "Cascadia Code", Consolas, ui-monospace, monospace; font-siz
 .chart { display: block; width: 100%; min-width: 770px; height: auto; max-height: 355px; margin-top: 8px; font: 13px "Segoe UI", system-ui, sans-serif; }
 .chart-scroll { overflow-x: auto; }
 .chart text { fill: var(--muted); }
+.transition-label rect { fill: var(--white); stroke: #99afc9; }
+.chart .transition-label text { fill: var(--ink); font-size: 12px; }
+.transition-label-title { font-weight: 700; }
 .overview-sidebar { gap: 12px; }
 .overview-sidebar .padded { padding-block: 14px; }
 .overview-sidebar .description { margin-top: 6px; }

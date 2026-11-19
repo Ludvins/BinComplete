@@ -150,15 +150,71 @@ function qualityChart(report, transitions) {
     if (complete >= left) line(x(complete), y(0), x(complete), y(top), "#69829b", dashed);
     if (contamination <= top) line(x(left), y(contamination), x(100), y(contamination), "#69829b", dashed);
   }
+  const hitLines = svg("g", { "aria-hidden": "true" });
+  const marks = svg("g", {});
+  const highlight = svg("g", { "aria-hidden": "true", "pointer-events": "none" });
+  function drawTransition(parent, { x1, y1, x2, y2, color }, active = false) {
+    svg("line", { x1, y1, x2, y2, stroke: color, "stroke-width": active ? 3 : 1,
+      opacity: active ? 1 : .65, "pointer-events": "none" }, undefined, parent);
+    svg("circle", { cx: x1, cy: y1, r: active ? 6.5 : 5, fill: "white", stroke: color,
+      "stroke-width": active ? 2 : 1 }, undefined, parent);
+    svg("circle", { cx: x2, cy: y2, r: active ? 5.5 : 3.5, fill: color,
+      ...(active ? { stroke: "white", "stroke-width": 1.5 } : {}) }, undefined, parent);
+  }
+  function drawEndpointLabels({ x1, y1, x2, y2, original, final }) {
+    const width = 151, height = 58, gap = 10;
+    const minX = x(left), maxX = x(100) - width;
+    const minY = y(top), maxY = y(0) - height;
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const points = [[x1, y1], [x2, y2]];
+    const clear = ([boxX, boxY]) => points.every(([px, py]) =>
+      px < boxX - 6 || px > boxX + width + 6 || py < boxY - 6 || py > boxY + height + 6);
+    const corners = [[minX, minY], [maxX, minY], [minX, maxY], [maxX, maxY]];
+    const choices = (px, py) => [
+      [px - width / 2, py - height - gap], [px - width / 2, py + gap],
+      [px + gap, py - height / 2], [px - width - gap, py - height / 2],
+      [px - width / 2, py - 2 * (height + gap)], [px - width / 2, py + height + 2 * gap],
+      ...corners,
+    ].map(([bx, by]) => [clamp(bx, minX, maxX), clamp(by, minY, maxY)]).filter(clear);
+    const separate = ([ax, ay], [bx, by]) => Math.abs(ax - bx) >= width + 4 || Math.abs(ay - by) >= height + 4;
+    const finalChoices = choices(x2, y2);
+    const originalBox = choices(x1, y1).find((box) => finalChoices.some((other) => separate(box, other)));
+    const finalBox = finalChoices.find((box) => separate(originalBox, box));
+    for (const [[bx, by], title, quality] of [[originalBox, "Original", original], [finalBox, "Final", final]]) {
+      const label = svg("g", { class: "transition-label" }, undefined, highlight);
+      svg("rect", { x: bx, y: by, width, height, rx: 5 }, undefined, label);
+      svg("text", { x: bx + 9, y: by + 16, class: "transition-label-title" }, title, label);
+      svg("text", { x: bx + 9, y: by + 33 }, `Completeness ${pct(quality.completeness)}`, label);
+      svg("text", { x: bx + 9, y: by + 49 }, `Contamination ${pct(quality.contamination)}`, label);
+    }
+  }
+  function watchTransition(target, transition) {
+    target.addEventListener("pointerenter", () => {
+      marks.setAttribute("opacity", ".3");
+      highlight.replaceChildren();
+      drawTransition(highlight, transition, true);
+      drawEndpointLabels(transition);
+    });
+    target.addEventListener("pointerleave", () => {
+      marks.removeAttribute("opacity");
+      highlight.replaceChildren();
+    });
+  }
   for (const { id, hq_transition: transition, original, final } of rows) {
     const color = transition === "gain" ? "#1766bf" : "#a44422";
-    const group = svg("g", { "data-transition": transition });
-    svg("title", {}, `${id} · ${transition === "gain" ? "Gained HQ" : "Lost HQ"}`, group);
-    const x1 = x(original.completeness), y1 = y(original.contamination);
-    const x2 = x(final.completeness), y2 = y(final.contamination);
-    svg("line", { x1, y1, x2, y2, stroke: color, opacity: .65 }, undefined, group);
-    svg("circle", { cx: x1, cy: y1, r: 5, fill: "white", stroke: color }, undefined, group);
-    svg("circle", { cx: x2, cy: y2, r: 3.5, fill: color }, undefined, group);
+    const title = `${id} · ${transition === "gain" ? "Gained HQ" : "Lost HQ"}`;
+    const coordinates = { x1: x(original.completeness), y1: y(original.contamination),
+      x2: x(final.completeness), y2: y(final.contamination) };
+    const points = { ...coordinates, color, original, final };
+    // A wider line under all the points keeps endpoints easy to pick in a dense plot.
+    const hitLine = svg("line", { ...coordinates, stroke: "transparent", "stroke-width": 10,
+      "pointer-events": "stroke" }, undefined, hitLines);
+    svg("title", {}, title, hitLine);
+    const group = svg("g", { "data-transition": transition }, undefined, marks);
+    svg("title", {}, title, group);
+    drawTransition(group, points);
+    watchTransition(hitLine, points);
+    watchTransition(group, points);
   }
   labels(475, 304, "Completeness (%)");
   svg("text", { x: 16, y: 139, transform: "rotate(-90 16 139)", "text-anchor": "middle" }, "Contamination (%)");

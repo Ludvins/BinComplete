@@ -150,15 +150,71 @@ function qualityChart(report, transitions) {
     if (complete >= left) line(x(complete), y(0), x(complete), y(top), "#69829b", dashed);
     if (contamination <= top) line(x(left), y(contamination), x(100), y(contamination), "#69829b", dashed);
   }
+  const hitLines = svg("g", { "aria-hidden": "true" });
+  const marks = svg("g", {});
+  const highlight = svg("g", { "aria-hidden": "true", "pointer-events": "none" });
+  function drawTransition(parent, { x1, y1, x2, y2, color }, active = false) {
+    svg("line", { x1, y1, x2, y2, stroke: color, "stroke-width": active ? 3 : 1,
+      opacity: active ? 1 : .65, "pointer-events": "none" }, undefined, parent);
+    svg("circle", { cx: x1, cy: y1, r: active ? 6.5 : 5, fill: "white", stroke: color,
+      "stroke-width": active ? 2 : 1 }, undefined, parent);
+    svg("circle", { cx: x2, cy: y2, r: active ? 5.5 : 3.5, fill: color,
+      ...(active ? { stroke: "white", "stroke-width": 1.5 } : {}) }, undefined, parent);
+  }
+  function drawEndpointLabels({ x1, y1, x2, y2, original, final }) {
+    const width = 151, height = 58, gap = 10;
+    const minX = x(left), maxX = x(100) - width;
+    const minY = y(top), maxY = y(0) - height;
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const points = [[x1, y1], [x2, y2]];
+    const clear = ([boxX, boxY]) => points.every(([px, py]) =>
+      px < boxX - 6 || px > boxX + width + 6 || py < boxY - 6 || py > boxY + height + 6);
+    const corners = [[minX, minY], [maxX, minY], [minX, maxY], [maxX, maxY]];
+    const choices = (px, py) => [
+      [px - width / 2, py - height - gap], [px - width / 2, py + gap],
+      [px + gap, py - height / 2], [px - width - gap, py - height / 2],
+      [px - width / 2, py - 2 * (height + gap)], [px - width / 2, py + height + 2 * gap],
+      ...corners,
+    ].map(([bx, by]) => [clamp(bx, minX, maxX), clamp(by, minY, maxY)]).filter(clear);
+    const separate = ([ax, ay], [bx, by]) => Math.abs(ax - bx) >= width + 4 || Math.abs(ay - by) >= height + 4;
+    const finalChoices = choices(x2, y2);
+    const originalBox = choices(x1, y1).find((box) => finalChoices.some((other) => separate(box, other)));
+    const finalBox = finalChoices.find((box) => separate(originalBox, box));
+    for (const [[bx, by], title, quality] of [[originalBox, "Original", original], [finalBox, "Final", final]]) {
+      const label = svg("g", { class: "transition-label" }, undefined, highlight);
+      svg("rect", { x: bx, y: by, width, height, rx: 5 }, undefined, label);
+      svg("text", { x: bx + 9, y: by + 16, class: "transition-label-title" }, title, label);
+      svg("text", { x: bx + 9, y: by + 33 }, `Completeness ${pct(quality.completeness)}`, label);
+      svg("text", { x: bx + 9, y: by + 49 }, `Contamination ${pct(quality.contamination)}`, label);
+    }
+  }
+  function watchTransition(target, transition) {
+    target.addEventListener("pointerenter", () => {
+      marks.setAttribute("opacity", ".3");
+      highlight.replaceChildren();
+      drawTransition(highlight, transition, true);
+      drawEndpointLabels(transition);
+    });
+    target.addEventListener("pointerleave", () => {
+      marks.removeAttribute("opacity");
+      highlight.replaceChildren();
+    });
+  }
   for (const { id, hq_transition: transition, original, final } of rows) {
     const color = transition === "gain" ? "#1766bf" : "#a44422";
-    const group = svg("g", { "data-transition": transition });
-    svg("title", {}, `${id} · ${transition === "gain" ? "Gained HQ" : "Lost HQ"}`, group);
-    const x1 = x(original.completeness), y1 = y(original.contamination);
-    const x2 = x(final.completeness), y2 = y(final.contamination);
-    svg("line", { x1, y1, x2, y2, stroke: color, opacity: .65 }, undefined, group);
-    svg("circle", { cx: x1, cy: y1, r: 5, fill: "white", stroke: color }, undefined, group);
-    svg("circle", { cx: x2, cy: y2, r: 3.5, fill: color }, undefined, group);
+    const title = `${id} · ${transition === "gain" ? "Gained HQ" : "Lost HQ"}`;
+    const coordinates = { x1: x(original.completeness), y1: y(original.contamination),
+      x2: x(final.completeness), y2: y(final.contamination) };
+    const points = { ...coordinates, color, original, final };
+    // A wider line under all the points keeps endpoints easy to pick in a dense plot.
+    const hitLine = svg("line", { ...coordinates, stroke: "transparent", "stroke-width": 10,
+      "pointer-events": "stroke" }, undefined, hitLines);
+    svg("title", {}, title, hitLine);
+    const group = svg("g", { "data-transition": transition }, undefined, marks);
+    svg("title", {}, title, group);
+    drawTransition(group, points);
+    watchTransition(hitLine, points);
+    watchTransition(group, points);
   }
   labels(475, 304, "Completeness (%)");
   svg("text", { x: 16, y: 139, transform: "rotate(-90 16 139)", "text-anchor": "middle" }, "Contamination (%)");
@@ -205,7 +261,7 @@ function barAxis(maximum) {
 }
 
 function proposalOutcomes(report) {
-  const byMethod = new Map(Object.values(report.comparison?.methods ?? {})
+  const byMethod = new Map(Object.values(report.methodArtifacts ?? report.comparison?.methods ?? {})
     .map(({ method }) => [method, { approved: 0, selected: 0 }]));
   for (const proposal of report.proposals) {
     if (!byMethod.has(proposal.method)) byMethod.set(proposal.method, { approved: 0, selected: 0 });
@@ -268,7 +324,8 @@ export function overview(report) {
   const s = report.summary;
   const hq = reportMode(report);
   const r = report.rna_summary;
-  const mixed = report.bins.filter((row) => row.recipient && row.assessment_mismatches?.length).length;
+  const mixed = report.bins.filter((row) => row.recipient && row.assessment_mismatches?.length
+    && !(row.uncheckedCheckm2Settings ?? report.uncheckedCheckm2Settings)).length;
   const conflicts = report.bins.filter((row) => row.recipient && (row.original.hq_conflicts?.length || row.final.hq_conflicts?.length)).length;
   const transitions = report.bins.filter((bin) => bin.recipient && ["gain", "loss"].includes(bin.hq_transition));
   const modified = report.bins.filter((bin) => bin.recipient && bin.selected_proposal_id !== null);
@@ -278,9 +335,11 @@ export function overview(report) {
   };
   return el("div", "",
     pageTitle("Bin refinement results", { badge: report.synthetic ? pill("Synthetic run", "info") : undefined }),
-    ...(mixed && !report.uncheckedCheckm2Settings ? [el("p", "notice warn audit-note", `${num(mixed)} recipient pairs have different assessment settings. Affected comparisons are withheld.`)] : []),
+    ...(mixed ? [el("p", "notice warn audit-note", `${num(mixed)} recipient pairs have different assessment settings. Affected comparisons are withheld.`)] : []),
     ...(conflicts ? [el("p", "notice warn audit-note", `${num(conflicts)} recipient pairs have conflicting MIMAG HQ evidence. Their HQ transitions are unresolved.`)] : []),
-    ...(report.uncheckedCheckm2Settings ? [el("p", "notice warn audit-note", "This report lists different CheckM2 settings and predates pairwise setting checks. Comparisons for changed bins are withheld. Regenerate the report to identify affected pairs.")] : []),
+    ...(report.uncheckedCheckm2Settings ? [el("p", "notice warn audit-note", report.sourceReports
+      ? "Some source files predate pairwise CheckM2 setting checks and list different settings. Comparisons for their changed bins are withheld."
+      : "This report lists different CheckM2 settings and predates pairwise setting checks. Comparisons for changed bins are withheld. Regenerate the report to identify affected pairs.")] : []),
     stats([["Original bins", num(s.original_bins)], ["Recipients", num(s.recipients), "", `${num(s.modified_bins)} modified`],
       ["Comparable pairs", `${num(s.comparable_pairs)} / ${num(s.recipients)}`], [`${hq} before`, num(s.original_hq)],
       [`${hq} after`, num(s.final_hq)], [`Net ${hq} change`, change(s.net_hq_change), s.net_hq_change > 0 ? "positive" : "",
@@ -529,7 +588,7 @@ export function binDetail(report, bin) {
     ...proposalQuality, column("Decision", decision, status)];
   return el("div", "", pageTitle(bin.id, { breadcrumb: link("Bins", "#bins"), badge: bin.recipient ? hqBadge(bin.hq_transition) : pill("Outside recipient set") }),
     ...hqConflict(bin.original, "Original bin"), ...hqConflict(bin.final, "Final bin"),
-    ...(bin.assessment_mismatches?.length ? [el("p", "notice warn audit-note", report.uncheckedCheckm2Settings
+    ...(bin.assessment_mismatches?.length ? [el("p", "notice warn audit-note", (bin.uncheckedCheckm2Settings ?? report.uncheckedCheckm2Settings)
       ? "This report predates pairwise CheckM2 setting checks. Comparisons for this changed bin are withheld."
       : `Different assessment settings for ${bin.assessment_mismatches.map((field) => assessmentLabels[field]).join(", ")}. Affected comparisons are withheld.`)] : []),
     el("div", "trio bin-summary", binQualityPanel(bin), binRnaPanel(bin), selectedProposalPanel(selected)),
@@ -646,13 +705,13 @@ export function rnaView(report) {
       el("p", "footnote", "MIMAG HQ also requires >90% completeness and <5% contamination.")))));
 }
 
-export function provenance(report) {
+function provenancePanels(report) {
   const p = report.provenance;
   const sources = [column("Tool", (row) => row.tool), column("Version", (row) => row.version), column("Input", (row) => row.format),
     column("Scope", (row) => row.scope), column("Completeness column", (row) => row.completeness_column),
     column("Settings", (row) => row.settings, (row) => row.settings, true), column("Source SHA-256", (row) => row.report_sha256, (row) => syntax(row.report_sha256), true),
     column("Export receipt SHA-256", (row) => row.export_receipt_sha256, (row) => syntax(row.export_receipt_sha256), true)];
-  return el("div", "", pageTitle("Assessment and provenance"), el("div", "split", el("div", "stack",
+  return el("div", "split", el("div", "stack",
     headTable("Assessment sources", sources, p.assessment_sources), panel("Ranking and reconciliation", details([
       ["Priority strategy", syntax(p.priority?.strategy)], ["Tier 1 limit", num(p.priority?.first_tier_limit)], ["Candidate inventory SHA-256", syntax(p.candidate_inventory_sha256)],
       ["Approval list SHA-256", syntax(p.approval_list_sha256)], ["Approved recipients", num(p.approved_recipient_union)],
@@ -662,5 +721,12 @@ export function provenance(report) {
     ]))), el("div", "stack", panel("Quality policy", el("p", "description", report.hq_policy.description),
       ...(isMimag(report) ? [el("p", "notice description", "5S, 16S and 23S rRNA · ≥18 distinct tRNA amino acid types")] : [])),
     panel("Report metadata", details([["Schema", num(report.schema_version)], ["BinComplete", p.bincomplete_version], ["Dataset identity", syntax(p.dataset_identity)],
-      ["Comparable HQ pairs", `${num(report.summary.comparable_pairs)} / ${num(report.summary.recipients)}`]])))));
+      ["Comparable HQ pairs", `${num(report.summary.comparable_pairs)} / ${num(report.summary.recipients)}`]]))));
+}
+
+export function provenance(report) {
+  const title = pageTitle("Assessment and provenance");
+  if (!report.sourceReports) return el("div", "", title, provenancePanels(report));
+  return el("div", "", title, ...report.sourceReports.map((source) => el("section", "source-report",
+    el("h2", "section-title", `Dataset ${source.datasetNumber} · ${source.name}`), provenancePanels(source))));
 }

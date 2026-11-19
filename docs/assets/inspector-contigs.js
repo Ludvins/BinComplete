@@ -208,7 +208,7 @@ export function addedContigEvidence(report, bin, selected) {
       column("Contig", (row) => row.contig_id, undefined, true),
       column("Coordinates", (row) => row.start_bp, (row) => `${num(row.start_bp)}–${num(row.end_bp)} bp (${row.strand})`),
     ];
-    const source = report.provenance.contig_rna_source;
+    const source = bin.contigRnaSource ?? report.provenance?.contig_rna_source;
     const annotation = panel("RNA calls on added contigs",
       ...(source ? [el("p", "chart-caption", `${source.tool} · ${source.version}`)] : []),
       features.length ? el("div", "compact description", staticTable("RNA calls on added contigs", rnaColumns, features))

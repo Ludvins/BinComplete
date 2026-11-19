@@ -60,7 +60,7 @@ function bin(row) {
       && row.assessment_mismatches.every((field) => assessmentFields.includes(field))));
 }
 
-function sameQuality(left, right) {
+export function sameQuality(left, right) {
   return [...qualityFields, "hq_status", "reported_hq_status"].every((field) => left[field] === right[field])
     && [...rnaFields, "status"].every((field) => rna(left)[field] === rna(right)[field])
     && JSON.stringify(left.hq_conflicts ?? []) === JSON.stringify(right.hq_conflicts ?? [])
@@ -125,7 +125,7 @@ function checkContigEvidence(bin) {
   }
 }
 
-function summarize(report, checkPairs = false) {
+export function summarize(report, checkPairs = false) {
   const totals = { original_bins: report.bins.length, recipients: 0, modified_bins: 0, comparable_pairs: 0,
     unassessed_pairs: 0, original_hq: 0, final_hq: 0, hq_gains: 0, hq_losses: 0, net_hq_change: 0 };
   const rnaTotals = { comparable_pairs: 0, incomplete_pairs: 0, gains: 0, losses: 0 };

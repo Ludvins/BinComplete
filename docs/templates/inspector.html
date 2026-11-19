@@ -22,24 +22,27 @@
       <a href="#rna">RNA checks</a><a href="#methods">Methods</a><a href="#provenance">Provenance</a>
     </nav>
     <div class="header-actions">
-      <span id="inspector-report-name" class="report-name" aria-label="Open report filename" hidden></span>
+      <span id="inspector-report-name" class="report-name" hidden></span>
       <a href="{{ 'reporting/' | url }}">Help</a>
-      <button type="button" id="inspector-open" class="primary">Open report</button>
+      <button type="button" id="inspector-open" class="primary">Open reports</button>
     </div>
   </header>
-  <input id="inspector-file" type="file" accept=".json,application/json" hidden>
-  <p id="inspector-status" role="status" aria-live="polite"></p>
+  <input id="inspector-file" type="file" accept=".json,application/json" multiple hidden>
   <main id="inspector-main" tabindex="-1">
     <section id="inspector-welcome" class="welcome panel" aria-labelledby="welcome-title">
-      <h1 id="welcome-title">Open a BinComplete report</h1>
-      <p>Inspect bin refinement results and RNA evidence.</p>
+      <h1 id="welcome-title">Open BinComplete reports</h1>
+      <p>Open one report or combine several to inspect their results together.</p>
       <div id="inspector-drop" class="drop-area">
         <span class="file-mark" aria-hidden="true"></span>
-        <strong>Drop your report here</strong>
-        <button id="inspector-choose" type="button" class="primary">Choose JSON file</button>
+        <strong>Drop report JSON files here</strong>
+        <button id="inspector-choose" type="button" class="primary">Choose JSON files</button>
+      </div>
+      <div id="inspector-feedback" class="report-feedback">
+        <p id="inspector-status" role="status" aria-live="polite"></p>
+        <progress id="inspector-progress" aria-label="Report loading progress" hidden></progress>
       </div>
       <button id="inspector-example" type="button">Try synthetic report</button>
-      <p class="privacy">Your file stays in this browser.</p>
+      <p class="privacy">Your files stay in this browser.</p>
     </section>
     <div id="inspector-view" hidden></div>
     <noscript>Enable JavaScript to open a report in this browser.</noscript>

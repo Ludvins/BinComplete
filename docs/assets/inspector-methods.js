@@ -11,7 +11,7 @@ function methodRows(report) {
   function add(id, method, saved = {}) {
     rows.set(id, { ...saved, id, method, generated: 0, assessed: 0, approved: 0, selected: 0, gain: 0, loss: 0, comparable: 0 });
   }
-  for (const [id, row] of Object.entries(report.comparison?.methods ?? {})) add(id, row.method, row);
+  for (const [id, row] of Object.entries(report.methodArtifacts ?? report.comparison?.methods ?? {})) add(id, row.method, row);
   for (const proposal of report.proposals) {
     if (!rows.has(proposal.artifact_id)) add(proposal.artifact_id, proposal.method);
     const row = rows.get(proposal.artifact_id);
@@ -99,6 +99,7 @@ export function methodCatalog(report) {
   const training = rows.filter(({ attention_validation: saved }) =>
     saved?.precision_at_5 != null || saved?.recall_at_5 != null);
   const benchmarks = rows.filter((row) => row.benchmark);
+  const hasComparison = report.comparison || report.sourceReports?.some((source) => source.comparison);
   const selectedDetails = el("div", "method-detail");
   let current = rows[0];
   let currentTable;
@@ -149,19 +150,17 @@ export function methodCatalog(report) {
       ["With training validation", num(training.length)], ["With benchmark results", num(benchmarks.length)]]),
     methodEvidence(rows, training, benchmarks),
     el("div", "method-toolbar", el("h2", "", "Proposal outcomes"),
-      ...(report.comparison ? [link("Method comparison →", "#methods/comparison")] : [])),
+      ...(hasComparison ? [link("Method comparison →", "#methods/comparison")] : [])),
     el("p", "chart-caption method-caption", "HQ gains and losses count comparable bins with selected proposals."),
     browserTable({ label: "Proposal outcomes", columns, rows, selected: (row) => row === current,
       afterRows: (_, table) => { currentTable = table; } }),
     selectedDetails, profiles,
-    el("p", "footnote", `Assessment order: ${report.provenance.priority?.strategy ?? "size_balanced_mean"} · Tier 1: first ${num(report.provenance.priority?.first_tier_limit ?? 40)} per artifact and recipient · Scores are scoped to that artifact and recipient.`));
+    el("p", "footnote", report.sourceReports
+      ? "Assessment settings are listed per file in Provenance. Scores are scoped to each artifact and recipient."
+      : `Assessment order: ${report.provenance.priority?.strategy ?? "size_balanced_mean"} · Tier 1: first ${num(report.provenance.priority?.first_tier_limit ?? 40)} per artifact and recipient · Scores are scoped to that artifact and recipient.`));
 }
 
-export function methodComparison(report) {
-  const title = pageTitle("Method comparison", { breadcrumb: link("Methods", "#methods") });
-  const data = report.comparison;
-  if (!data) return el("div", "", title, el("p", "notice", "Method comparison is unavailable in this report."));
-  const rows = methodRows(report);
+function comparisonPanels(data, rows) {
   const names = new Map(rows.map((row) => [row.id, titleFor(rows, row)]));
   const counts = [
     ["Common targets", "common_recipients"], ["Identical constructions", "identical_constructions"],
@@ -173,7 +172,7 @@ export function methodComparison(report) {
     ...counts.map(([label, field]) => column(label, (row) => row[field], (row) => num(row[field]))),
   ];
   const patterns = data.exact_method_intersections ?? [];
-  return el("div", "", title,
+  return [
     stats([["Artifact count", num(Object.keys(data.methods).length)], ["Shared targets", num(data.common_recipients_all_methods)],
       ["Target union", num(data.distinct_recipient_union)], ["Distinct constructions", num(data.distinct_construction_union)],
       ["Contigs proposed for multiple targets", num(data.donor_contigs_proposed_for_multiple_recipients)]]),
@@ -182,5 +181,22 @@ export function methodComparison(report) {
     ...(patterns.length ? [el("div", "method-detail", panel("Exact construction sharing", staticTable("Exact construction sharing", [
       column("Artifacts sharing the same construction", (row) => row.methods.map((id) => names.get(id)).join(" / "), undefined, true),
       column("Constructions", (row) => row.constructions, (row) => num(row.constructions)),
-    ], patterns)))] : []));
+    ], patterns)))] : []),
+  ];
+}
+
+export function methodComparison(report) {
+  const title = pageTitle("Method comparison", { breadcrumb: link("Methods", "#methods") });
+  if (report.sourceReports) {
+    const sections = report.sourceReports.filter((source) => source.comparison).map((source) => {
+      const rows = Object.entries(source.comparison.methods).map(([id, row]) => ({ ...row, id }));
+      return el("section", "source-report", el("h2", "section-title", `Dataset ${source.datasetNumber} · ${source.name}`),
+        methodEvidence(rows, rows.filter((row) => row.attention_validation?.precision_at_5 != null
+          || row.attention_validation?.recall_at_5 != null), rows.filter((row) => row.benchmark)),
+        ...comparisonPanels(source.comparison, rows));
+    });
+    if (sections.length) return el("div", "", title, ...sections);
+  }
+  if (!report.comparison) return el("div", "", title, el("p", "notice", "Method comparison is unavailable in this report."));
+  return el("div", "", title, ...comparisonPanels(report.comparison, methodRows(report)));
 }

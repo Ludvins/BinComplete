@@ -1,5 +1,6 @@
 import { prepareReport } from "./inspector-data.js";
 import { example } from "./inspector-example.js";
+import { mergeReports } from "./inspector-merge.js";
 import { methodCatalog, methodComparison } from "./inspector-methods.js";
 import { el, link, pageTitle } from "./inspector-ui.js";
 import {
@@ -8,6 +9,9 @@ import {
 
 const element = (id) => document.getElementById(`inspector-${id}`);
 const routes = { overview, bins: binsView, proposals: proposalsView, rna: rnaView, methods: methodCatalog, provenance };
+const reportName = element("report-name");
+const statusText = element("status");
+const progressBar = element("progress");
 let report;
 let openRequest = 0;
 const listViews = new Map();
@@ -45,48 +49,104 @@ function render() {
   window.scrollTo(0, 0);
 }
 
-function status(message, error = false) {
-  const node = element("status");
-  node.toggleAttribute("data-error", error);
-  node.textContent = message;
+function status(message, { error = false, loading = false, completed = 0, total } = {}) {
+  statusText.toggleAttribute("data-error", error);
+  statusText.toggleAttribute("data-loading", loading);
+  statusText.textContent = message;
+  progressBar.hidden = !loading;
+  if (total === undefined) progressBar.removeAttribute("value");
+  else {
+    progressBar.max = total;
+    progressBar.value = completed;
+  }
 }
 
-function openReport(data, name) {
-  const opened = prepareReport(data);
+function paintStatus() {
+  // Give the status a frame before parsing, merging, or rendering on the main thread.
+  return new Promise((resolve) => {
+    let frame = requestAnimationFrame(() => { frame = requestAnimationFrame(finish); });
+    const fallback = setTimeout(finish, 100);
+    function finish() {
+      cancelAnimationFrame(frame);
+      clearTimeout(fallback);
+      resolve();
+    }
+  });
+}
+
+function openReport(data, names) {
   const useBookmark = !report && Object.hasOwn(routes, location.hash.slice(1).split("/")[0]);
-  report = opened;
+  if (!report) element("main").before(element("feedback"));
+  report = data;
   listViews.clear();
+  reportName.textContent = names.length === 1 ? names[0] : `${names.length} files combined`;
+  reportName.title = names.join("\n");
+  reportName.hidden = false;
   element("welcome").hidden = true;
   element("view").hidden = false;
   element("nav").hidden = false;
-  status(`Opened ${name}`);
-  element("report-name").textContent = name;
-  element("report-name").title = name;
-  element("report-name").hidden = false;
   if (!useBookmark && location.hash !== "#overview") history.replaceState(null, "", "#overview");
   render();
 }
 
-async function readFile(file) {
-  if (!file) return;
+async function readFiles(files) {
+  if (!files.length) return;
   const request = ++openRequest;
-  status(`Opening ${file.name}…`);
-  try {
-    const data = JSON.parse(await file.text());
-    if (request === openRequest) openReport(data, file.name);
-  } catch (error) {
-    if (request === openRequest) {
-      status(error instanceof SyntaxError ? "The selected file contains invalid JSON." : error.message, true);
+  const opened = [];
+  const errors = [];
+  const multiple = files.length > 1;
+  for (const [index, file] of files.entries()) {
+    const message = multiple ? `Reading and validating file ${index + 1} of ${files.length}…` : `Reading ${file.name}…`;
+    status(message, { loading: true, completed: index, total: multiple ? files.length : undefined });
+    if (index === 0) {
+      await paintStatus();
+      if (request !== openRequest) return;
+    }
+    try {
+      const contents = await file.text();
+      if (request !== openRequest) return;
+      opened.push({ name: file.name, data: prepareReport(JSON.parse(contents)) });
+    } catch (error) {
+      if (request !== openRequest) return;
+      const message = error instanceof SyntaxError ? "Invalid JSON." : error.message;
+      errors.push(`${file.name} — ${message}`);
     }
   }
+  if (errors.length) {
+    if (multiple) errors.unshift("Could not combine the selected files.");
+    status(errors.join("\n"), { error: true });
+    return;
+  }
+  let data = opened[0].data;
+  if (multiple) {
+    status(`Combining ${opened.length} reports…`, { loading: true });
+    await paintStatus();
+    if (request !== openRequest) return;
+    try {
+      data = mergeReports(opened);
+    } catch (error) {
+      status(`Could not combine the selected files.\n${error.message}`, { error: true });
+      return;
+    }
+  }
+  status("Building the report view…", { loading: true });
+  await paintStatus();
+  if (request !== openRequest) return;
+  try {
+    openReport(data, opened.map(({ name }) => name));
+  } catch (error) {
+    status(`Could not display the report.\n${error.message}`, { error: true });
+    return;
+  }
+  status(multiple ? `Combined ${opened.length} reports` : `Opened ${opened[0].name}`);
 }
 
 const picker = element("file");
 for (const id of ["open", "choose"]) element(id).addEventListener("click", () => picker.click());
 picker.addEventListener("change", () => {
-  const file = picker.files[0];
+  const files = [...picker.files];
   picker.value = "";
-  readFile(file);
+  readFiles(files);
 });
 const drop = element("drop");
 drop.addEventListener("dragover", (event) => {
@@ -97,12 +157,12 @@ drop.addEventListener("dragleave", () => drop.removeAttribute("data-dragging"));
 drop.addEventListener("drop", (event) => {
   event.preventDefault();
   drop.removeAttribute("data-dragging");
-  if (event.dataTransfer.files.length === 1) readFile(event.dataTransfer.files[0]);
-  else status("Drop one BinComplete report JSON file.", true);
+  readFiles([...event.dataTransfer.files]);
 });
 element("example").addEventListener("click", () => {
   openRequest++;
-  openReport(example, "synthetic report");
+  openReport(prepareReport(example), ["synthetic report"]);
+  status("Opened synthetic report");
 });
 window.addEventListener("hashchange", () => {
   if (location.hash !== "#inspector-main") render();

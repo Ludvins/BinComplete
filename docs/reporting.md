@@ -1,9 +1,14 @@
 # Export a report for BinCompleteInspector
 
-[BinCompleteInspector](inspector.md) opens one JSON report from a completed
-selection. Generate it after evaluating proposals and running `reconcile`. This
-step reads saved outputs. It does not run CheckM2, rescore proposals, change the
-selection, or create FASTAs.
+[BinCompleteInspector](inspector.md) opens JSON reports from completed
+selections. Generate each report after evaluating proposals and running
+`reconcile`. This step reads saved outputs. It does not run CheckM2, rescore
+proposals, change the selection, or create FASTAs.
+
+To see several reports together, select their JSON files in the Inspector.
+The files must use the same HQ policy. Matching records from the same dataset
+count once. If evidence or selections conflict, the Inspector identifies the
+affected files. Original settings and receipts remain visible in **Provenance**.
 
 For a run from [`bincomplete assess`](evaluation.md#run-checkm2-and-rna-checks-with-bincomplete),
 use `baseline.tsv` and `assessment.tsv` as sources when preparing the common

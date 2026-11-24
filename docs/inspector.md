@@ -18,6 +18,13 @@ Open local reports to inspect bin refinement results and RNA evidence.
 4. Open **Bins** to inspect a bin, compare evaluated proposals, and view its saved
    RNA evidence.
 
+The **Overview** plots GC and read depth for contigs in modified bins with saved
+measurements. The relative plot compares each addition with the original
+contigs' median GC and median depth in its recipient bin. Hover over a point
+or use **Highlight a bin** to see that bin's additions in both plots.
+Expand **GC and read depth by modified bin** for individual plots with
+a shared depth scale and shaded ranges for the original contigs.
+
 The browser reads the JSON files locally. The optional sequence viewer also
 reads its matching FASTA locally. See
 [added contig evidence](reporting.md#include-added-contig-evidence) for the

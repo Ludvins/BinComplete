@@ -148,6 +148,11 @@ function scatterPanel(original, added, choose) {
   return [panel("Original vs. added contigs", graph, legend), buttons];
 }
 
+export function addedContigs(evidence, selected) {
+  const donors = new Map(selected.donors.map((donor) => [donor.id, donor]));
+  return evidence.added.map(({ id, gc_fraction, sequence_sha256 }) => ({ ...donors.get(id), gc_fraction, sequence_sha256 }));
+}
+
 export function addedContigEvidence(report, bin, selected) {
   const section = el("details", "panel bin-disclosure contig-evidence",
     el("summary", "", "Added contig evidence"));
@@ -157,9 +162,8 @@ export function addedContigEvidence(report, bin, selected) {
       section.append(el("p", "description", "Export a report with contig evidence to see GC, depth and saved RNA calls here."));
       return;
     }
-    const { original, added: metadata, rna_features: features } = bin.contig_evidence;
-    const byId = new Map(selected.donors.map((donor) => [donor.id, donor]));
-    const added = metadata.map(({ id, gc_fraction, sequence_sha256 }) => ({ ...byId.get(id), gc_fraction, sequence_sha256 }));
+    const { original, rna_features: features } = bin.contig_evidence;
+    const added = addedContigs(bin.contig_evidence, selected);
     const contigs = new Map(added.map((row) => [row.id, row]));
     const details = el("div", "selected-contig");
     const viewer = sequenceViewer();

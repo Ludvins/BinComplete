@@ -1,4 +1,5 @@
 import { addedContigEvidence } from "./inspector-contigs.js";
+import { coverageOverview } from "./inspector-coverage.js";
 import { decision, isMimag, methods, pairRna, rna, trnaMinTypes } from "./inspector-data.js";
 import {
   basePairs, browserTable, change, column, details, el, hqBadge, link, matches, num, pageTitle,
@@ -350,6 +351,7 @@ export function overview(report) {
       panel("RNA coverage", el("p", "description", r ? `${num(r.comparable_pairs)} / ${num(s.recipients)} comparable RNA pairs` : "No RNA evidence bundled in this report."),
         ...(r ? [el("p", "description notice warn", `${num(r.incomplete_pairs)} recipient pairs with incomplete RNA evidence`)] : [])),
       checkm2Changes(modified))),
+    coverageOverview(report, modified),
     el("div", "split equal overview-outcomes", proposalOutcomes(report), rnaChanges(modified)),
     transitions.length
       ? headTable("HQ transitions", [binId, ...qualityPairs.map(([label, metric]) => percentPair(label, metric, true)),
